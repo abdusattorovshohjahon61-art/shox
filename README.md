@@ -1,2 +1,2 @@
-# shox
+# nilufar-shoes
 Loyixalar uchun
