@@ -1,0 +1,2 @@
+# shox
+Loyixalar uchun
