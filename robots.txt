@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 
-Sitemap: https://abdusattorovshohjahon61-art.github.io/shox/sitemap.xml
+Sitemap: https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/sitemap.xml

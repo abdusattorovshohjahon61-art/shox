@@ -53,11 +53,11 @@ Haqiqiy do'kon sifatida ishlatish uchun backend (masalan, ma'lumotlar bazasi + T
 
 ## Saytni internetga chiqarish (GitHub Pages, bepul)
 
-1. `github.com/abdusattorovshohjahon61-art/shox` → **Settings** → chap menyuda **Pages**
+1. `github.com/abdusattorovshohjahon61-art/nilufar-shoes` → **Settings** → chap menyuda **Pages**
 2. **Source:** `Deploy from a branch`, **Branch:** `claude/footwear-shop-visual-site-3gygnp`, papka `/ (root)` → **Save**
 3. 1–2 daqiqadan keyin sayt ochiladi:
-   - Do'kon: `https://abdusattorovshohjahon61-art.github.io/shox/`
-   - CEO panel: `https://abdusattorovshohjahon61-art.github.io/shox/admin.html`
+   - Do'kon: `https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/`
+   - CEO panel: `https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/admin.html`
 
 Agar o'z domeningiz bo'lsa (masalan `nilufarshoes.uz`), Pages sozlamasidagi "Custom domain" ga yozing va shu papkada `CNAME` fayli hosil bo'ladi.
 
