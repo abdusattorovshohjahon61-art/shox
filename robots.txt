@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+
+Sitemap: https://abdusattorovshohjahon61-art.github.io/shox/sitemap.xml

@@ -50,3 +50,26 @@ Hozircha barcha ma'lumotlar (mahsulotlar, buyurtmalar, statistika) **brauzerning
 - CEO paroli kodda tekshiriladi, haqiqiy himoya emas.
 
 Haqiqiy do'kon sifatida ishlatish uchun backend (masalan, ma'lumotlar bazasi + Telegram botga buyurtma yuborish) ulash kerak — `js/core.js` dagi `Store` obyekti shu uchun alohida ajratilgan.
+
+## Saytni internetga chiqarish (GitHub Pages, bepul)
+
+1. `github.com/abdusattorovshohjahon61-art/shox` → **Settings** → chap menyuda **Pages**
+2. **Source:** `Deploy from a branch`, **Branch:** `claude/footwear-shop-visual-site-3gygnp`, papka `/ (root)` → **Save**
+3. 1–2 daqiqadan keyin sayt ochiladi:
+   - Do'kon: `https://abdusattorovshohjahon61-art.github.io/shox/`
+   - CEO panel: `https://abdusattorovshohjahon61-art.github.io/shox/admin.html`
+
+Agar o'z domeningiz bo'lsa (masalan `nilufarshoes.uz`), Pages sozlamasidagi "Custom domain" ga yozing va shu papkada `CNAME` fayli hosil bo'ladi.
+
+## Google'da topilishi uchun
+
+Sayt kodida allaqachon bor: sahifa sarlavhasi va tavsifi, kalit so'zlar, `sitemap.xml`, `robots.txt`, ijtimoiy tarmoq uchun rasm (og:image) va Google uchun do'kon ma'lumotlari (JSON-LD `ShoeStore`).
+
+Siz qilishingiz kerak:
+1. `index.html` dagi JSON-LD bo'limida telefon, manzil, Telegram va Instagram havolalarini **o'zingiznikiga almashtiring**.
+2. Agar domen yoki manzil o'zgarsa, `index.html`, `robots.txt` va `sitemap.xml` dagi havolalarni yangilang.
+3. [Google Search Console](https://search.google.com/search-console) ga kiring → saytni qo'shing (URL prefix) → tasdiqlang → `sitemap.xml` ni yuboring.
+4. [Google Business Profile](https://business.google.com) da do'konni ro'yxatdan o'tkazing — xaritada va qidiruvda chiqadi.
+5. Telegram va Instagram profilingizga sayt havolasini qo'ying — Google havolalarni hisobga oladi.
+
+Eslatma: Google saytni darhol ko'rsatmaydi, odatda 1–4 hafta kerak bo'ladi. `github.io` manzilidan ko'ra o'z domeningiz (`.uz`) bo'lsa, yuqoriroq chiqadi.
