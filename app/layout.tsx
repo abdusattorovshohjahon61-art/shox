@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import LogoutButton from "@/components/LogoutButton";
+import { currentUser, isAdmin } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,7 +9,8 @@ export const metadata: Metadata = {
   description: "Matn yoki rasmdan kinematografik AI videolar yarating. Kamera harakatlari, uslublar va eng kuchli modellar bir joyda.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await currentUser();
   return (
     <html lang="uz">
       <body>
@@ -17,13 +20,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <nav>
             <Link href="/#features">Imkoniyatlar</Link>
-            <Link href="/#models">Modellar</Link>
             <Link href="/#pricing">Narxlar</Link>
-            <Link href="/create" className="btn btn-primary btn-sm">Yaratish</Link>
+            {user ? (
+              <>
+                {isAdmin(user) && <Link href="/admin">Admin</Link>}
+                <Link href="/billing" className="credits" title="Balans">⚡ {user.credits}</Link>
+                <LogoutButton />
+                <Link href="/create" className="btn btn-primary btn-sm">Yaratish</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="keep">Kirish</Link>
+                <Link href="/register" className="btn btn-primary btn-sm">Boshlash</Link>
+              </>
+            )}
           </nav>
         </header>
         {children}
-        <footer className="footer">© {new Date().getFullYear()} Shox AI. Barcha huquqlar himoyalangan.</footer>
+        <footer className="footer">
+          © {new Date().getFullYear()} Shox AI · <Link href="/oferta">Ommaviy oferta</Link>
+        </footer>
       </body>
     </html>
   );

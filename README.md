@@ -1,40 +1,69 @@
 # Shox AI — AI video generator
 
-Higgsfield uslubidagi AI video generatsiya platformasi (MVP). Matn yoki rasmdan video,
-12 ta kamera harakati, uslublar va bir nechta eng kuchli modellar (Seedance, Hailuo, Kling, Veo).
+Higgsfield uslubidagi AI video platforma: matn yoki rasmdan video, 12 ta kamera harakati, uslublar,
+4 ta model (Seedance, Hailuo, Kling, Veo), ro'yxatdan o'tish, kredit tizimi, **Click** va **Payme** to'lovlari,
+videolarni saqlash va admin panel.
 
-## Ishga tushirish
+## Lokal ishga tushirish
 
 ```bash
 npm install
-cp .env.example .env.local   # REPLICATE_API_TOKEN ni kiriting
-npm run dev                  # http://localhost:3000
+cp .env.example .env.local
+npm run dev        # http://localhost:3000
 ```
 
-`REPLICATE_API_TOKEN` bo'lmasa sayt **demo rejimda** ishlaydi — har qanday so'rovga namuna video qaytaradi.
-Token olish: https://replicate.com/account/api-tokens (to'lov kartasi ulanadi, har bir video uchun haq olinadi).
+Hech qanday kalitsiz ham ishlaydi: video — **demo rejim** (namuna video), to'lov — **sinov to'lovi** tugmasi.
+Baza avtomatik `data/shox.db` faylida yaratiladi. `.env.local` dagi `ADMIN_EMAILS` ga emailingizni yozing — `/admin` ochiladi.
 
-## Tuzilma
+## Ishga tushirishdan oldin (checklist)
 
-| Fayl | Vazifasi |
-|---|---|
-| `app/page.tsx` | Landing sahifa (imkoniyatlar, modellar, narxlar) |
-| `app/create/page.tsx` | Studiya: prompt, rasm yuklash, kamera harakati, uslub, format |
-| `app/api/generate/route.ts` | Generatsiyani boshlaydi (tekshiruv + rate limit) |
-| `app/api/status/[id]/route.ts` | Generatsiya holatini qaytaradi |
-| `lib/models.ts` | Modellar ro'yxati — yangi model qo'shish shu yerda |
-| `lib/motions.ts` | Kamera harakatlari va uslublar |
-| `lib/replicate.ts` | Replicate API mijozi + demo rejim |
+1. **Replicate** — `REPLICATE_API_TOKEN` va `REPLICATE_WEBHOOK_SECRET`. Har bir modelni bir marta sinab ko'ring;
+   model parametrlari `lib/models.ts` da, xato bersa o'sha yerda tuzatiladi.
+2. **Narxlar** — Replicate'da har bir model qancha turishini tekshiring va `lib/models.ts` dagi `credits`,
+   `lib/packs.ts` dagi paket narxlarini foyda bilan belgilang.
+3. **Video saqlash** — Cloudflare R2 bucket (`S3_*`). Busiz Replicate havolalari ~1 soatda o'chadi.
+4. **Click** — merchant.click.uz'da xizmat oching. Prepare va Complete URL: `https://SAYT/api/payments/click`.
+5. **Payme** — merchant.payme.uz'da kassa oching. Endpoint: `https://SAYT/api/payments/payme`,
+   hisob maydoni: `order_id`. Avval `PAYME_TEST=true` bilan sandbox testlaridan o'ting.
+6. **Oferta** — `app/oferta/page.tsx` dagi `[qavs]` ichidagi ma'lumotlarni to'ldiring (Click/Payme talab qiladi).
+7. `APP_URL` — saytning https manzili. `ENABLE_TEST_PAYMENTS` ishlab chiqarishda `false` bo'lsin.
 
 ## Deploy
 
-Vercel'ga ulang, `REPLICATE_API_TOKEN` ni Environment Variables'ga qo'shing — tayyor.
+**VPS / Docker** (tavsiya — O'zbekistondagi serverlar ham bo'ladi):
+```bash
+docker build -t shox .
+docker run -d -p 3000:3000 --env-file .env -v shox-data:/app/data shox
+```
+Oldiga Nginx/Caddy qo'yib HTTPS yoqing.
 
-## Startup uchun keyingi qadamlar
+**Vercel**: fayl baza saqlanmaydi, shuning uchun [Turso](https://turso.tech) baza oching va
+`DATABASE_URL=libsql://...`, `DATABASE_AUTH_TOKEN` ni kiriting.
 
-1. **Ro'yxatdan o'tish** — Clerk yoki NextAuth (Google / Telegram login).
-2. **Ma'lumotlar bazasi** — Postgres (Supabase/Neon): foydalanuvchilar, kreditlar, videolar tarixi.
-3. **To'lov** — Click / Payme (O'zbekiston), Stripe (xalqaro). Kreditlarni serverda yechish.
-4. **Video saqlash** — Replicate havolalari ~1 soatda o'chadi; natijani S3 / Cloudflare R2 ga ko'chiring.
-5. **Rate limit** — hozirgi xotiradagi limitni Upstash Redis'ga almashtiring.
-6. **Unit-iqtisod** — har bir model narxini Replicate'da tekshirib, `credits` qiymatini foyda bilan belgilang.
+## Qanday ishlaydi
+
+- **Kreditlar** generatsiyadan oldin atomar yechiladi; video xato bilan tugasa yoki xizmat ishlamasa — avtomatik qaytariladi.
+- **Video holati** ikki yo'l bilan yangilanadi: brauzer so'rovi va Replicate webhook. Sahifa yopilsa ham video saqlanadi.
+- **To'lovlar**: kredit faqat bir marta qo'shiladi (takroriy callback xavfsiz). Payme orqali qaytarilgan to'lov kreditni ham qaytarib oladi.
+- **Himoya**: parollar scrypt bilan, sessiya httpOnly cookie, login/ro'yxat/generatsiya uchun rate limit,
+  foydalanuvchi faqat o'z videolarini ko'radi, Click imzosi va Payme Basic-auth tekshiriladi.
+
+## Tuzilma
+
+| Joy | Vazifasi |
+|---|---|
+| `app/page.tsx` | Landing |
+| `app/create`, `components/Studio.tsx` | Video studiya |
+| `app/billing` | Balans, kredit sotib olish, to'lovlar tarixi |
+| `app/admin` | Statistika, foydalanuvchilar, kredit qo'shish |
+| `app/api/generate`, `app/api/jobs` | Generatsiya va videolar |
+| `app/api/payments/{click,payme}` | To'lov tizimlari callback'lari |
+| `app/api/webhooks/replicate` | Replicate webhook |
+| `lib/models.ts`, `lib/packs.ts`, `lib/motions.ts` | Modellar, paketlar, kamera harakatlari |
+| `lib/db.ts` | Baza va sxema (birinchi so'rovda avtomatik yaratiladi) |
+
+## Hali yo'q (keyingi bosqich)
+
+- Parolni tiklash (email yuborish xizmati kerak, masalan Resend) — hozircha admin yordam beradi.
+- Google / Telegram orqali kirish.
+- Kontent moderatsiyasi (taqiqlangan promptlarni filtrlash).

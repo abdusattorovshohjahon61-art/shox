@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MODELS } from "@/lib/models";
 import { MOTIONS } from "@/lib/motions";
+import { formatSum, PACKS } from "@/lib/packs";
 
 const FEATURES = [
   { icon: "✍️", title: "Matndan video", text: "G'oyangizni yozing — AI uni bir necha daqiqada kinematografik videoga aylantiradi." },
@@ -9,12 +10,6 @@ const FEATURES = [
   { icon: "🎨", title: "Tayyor uslublar", text: "Kino, anime, 3D, noir — bir bosishda butun videoning ko'rinishini o'zgartiring." },
   { icon: "⚡", title: "Eng yaxshi modellar", text: "Veo, Kling, Hailuo, Seedance — barchasi bitta studiyada, bitta hisobda." },
   { icon: "📱", title: "Ijtimoiy tarmoqlar uchun", text: "9:16 vertikal format — Reels, TikTok va Shorts uchun tayyor." },
-];
-
-const PLANS = [
-  { name: "Bepul", price: "0", credits: "50 kredit", items: ["Seedance modeli", "720p sifat", "Suv belgisi bilan"] },
-  { name: "Pro", price: "99 000", credits: "1 000 kredit / oy", items: ["Barcha modellar", "Barcha kamera harakatlari", "Suv belgisiz", "Navbatsiz generatsiya"], featured: true },
-  { name: "Studio", price: "299 000", credits: "4 000 kredit / oy", items: ["Pro'dagi hammasi", "Tijoriy litsenziya", "API kirish", "Ustuvor yordam"] },
 ];
 
 export default function Home() {
@@ -73,15 +68,22 @@ export default function Home() {
 
       <section className="section" id="pricing">
         <h2>Narxlar</h2>
-        <p>So'mda, oylik to'lov. Istalgan vaqtda bekor qilish mumkin.</p>
+        <p>Obuna shart emas — kerakli miqdorda kredit oling. Click va Payme orqali to&apos;lov.</p>
         <div className="grid">
-          {PLANS.map((p) => (
-            <div className={`card price ${p.featured ? "featured" : ""}`} key={p.name}>
-              <h3>{p.name}{p.featured && <span className="badge">Tavsiya</span>}</h3>
-              <div className="amount">{p.price} <span className="muted" style={{ fontSize: 16 }}>so'm</span></div>
-              <div className="accent">{p.credits}</div>
-              <ul>{p.items.map((i) => <li key={i}>{i}</li>)}</ul>
-              <Link href="/create" className={`btn ${p.featured ? "btn-primary" : ""}`}>Tanlash</Link>
+          <div className="card price">
+            <h3>Bepul</h3>
+            <div className="amount">0 <span className="muted" style={{ fontSize: 16 }}>so&apos;m</span></div>
+            <div className="accent">{process.env.FREE_CREDITS ?? 50} kredit</div>
+            <ul><li>Ro&apos;yxatdan o&apos;tganda</li><li>Barcha modellar</li></ul>
+            <Link href="/register" className="btn">Boshlash</Link>
+          </div>
+          {PACKS.map((p) => (
+            <div className={`card price ${p.featured ? "featured" : ""}`} key={p.id}>
+              <h3>{p.name}{p.featured && <span className="badge">Foydali</span>}</h3>
+              <div className="amount">{formatSum(p.price)} <span className="muted" style={{ fontSize: 16 }}>so&apos;m</span></div>
+              <div className="accent">{p.credits} kredit</div>
+              <ul><li>Barcha modellar va harakatlar</li><li>Kreditlar muddatsiz</li><li>Tijoriy foydalanish</li></ul>
+              <Link href="/billing" className={`btn ${p.featured ? "btn-primary" : ""}`}>Sotib olish</Link>
             </div>
           ))}
         </div>
@@ -90,7 +92,7 @@ export default function Home() {
       <section className="section">
         <div className="cta">
           <h2>Birinchi videongizni hozir yarating</h2>
-          <p className="muted" style={{ marginBottom: 28 }}>Ro'yxatdan o'tish shart emas.</p>
+          <p className="muted" style={{ marginBottom: 28 }}>Ro'yxatdan o'ting va bepul kreditlar bilan sinab ko'ring.</p>
           <Link href="/create" className="btn btn-primary">Studiyani ochish →</Link>
         </div>
       </section>

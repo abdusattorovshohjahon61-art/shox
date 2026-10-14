@@ -3,8 +3,9 @@
 const API = "https://api.replicate.com/v1";
 
 export type JobStatus = "starting" | "processing" | "succeeded" | "failed" | "canceled";
+export const FINAL_STATUSES: string[] = ["succeeded", "failed", "canceled"];
 
-export interface Job {
+export interface RemoteJob {
   id: string;
   status: JobStatus;
   output?: string;
@@ -25,7 +26,7 @@ function headers() {
   };
 }
 
-function normalize(p: { id: string; status: JobStatus; output?: unknown; error?: unknown }): Job {
+function normalize(p: { id: string; status: JobStatus; output?: unknown; error?: unknown }): RemoteJob {
   const output = Array.isArray(p.output) ? p.output[p.output.length - 1] : p.output;
   return {
     id: p.id,
@@ -35,25 +36,25 @@ function normalize(p: { id: string; status: JobStatus; output?: unknown; error?:
   };
 }
 
-export async function createJob(model: string, input: Record<string, unknown>): Promise<Job> {
+export async function createJob(model: string, input: Record<string, unknown>, webhook?: string): Promise<RemoteJob> {
   if (isDemo()) {
-    return { id: `demo-${Date.now()}`, status: "starting" };
+    return { id: `demo-${Date.now()}${Math.floor(Math.random() * 1000)}`, status: "starting" };
   }
   const res = await fetch(`${API}/models/${model}/predictions`, {
     method: "POST",
     headers: headers(),
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ input, ...(webhook ? { webhook, webhook_events_filter: ["completed"] } : {}) }),
   });
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data?.detail || `Replicate xatosi (${res.status})`);
   }
   return normalize(data);
 }
 
-export async function getJob(id: string): Promise<Job> {
+export async function getRemoteJob(id: string): Promise<RemoteJob> {
   if (id.startsWith("demo-")) {
-    const started = Number(id.slice(5));
+    const started = Number(id.slice(5, 18));
     const done = Date.now() - started > DEMO_SECONDS * 1000;
     return done ? { id, status: "succeeded", output: DEMO_VIDEO } : { id, status: "processing" };
   }
@@ -61,7 +62,7 @@ export async function getJob(id: string): Promise<Job> {
     throw new Error("Noto'g'ri ID");
   }
   const res = await fetch(`${API}/predictions/${id}`, { headers: headers(), cache: "no-store" });
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data?.detail || `Replicate xatosi (${res.status})`);
   }

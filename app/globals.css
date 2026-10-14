@@ -33,7 +33,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
   background: rgba(7,7,10,.8); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
-.nav nav { display: flex; align-items: center; gap: 22px; font-size: 14px; color: var(--muted); }
+.nav nav { display: flex; align-items: center; gap: 18px; font-size: 14px; color: var(--muted); }
 .nav nav a:hover { color: var(--text); }
 .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; }
 .logo-mark {
@@ -74,7 +74,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .section h2 { font-size: clamp(28px, 4vw, 42px); margin: 0 0 10px; letter-spacing: -.01em; }
 .section > p { color: var(--muted); margin: 0 0 40px; }
 
-.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .card {
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
 }
@@ -93,7 +93,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
 .price { display: flex; flex-direction: column; gap: 14px; }
 .price.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.price .amount { font-size: 38px; font-weight: 800; }
+.price .amount { font-size: 34px; font-weight: 800; white-space: nowrap; }
 .price ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
 
 .cta {
@@ -152,8 +152,36 @@ button, input, textarea, select { font: inherit; color: inherit; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
 @media (max-width: 900px) {
-  .nav nav a:not(.btn) { display: none; }
+  .nav nav > a:not(.btn):not(.credits):not(.keep) { display: none; }
+  .nav { padding: 12px 16px; }
   .studio { grid-template-columns: 1fr; }
   .panel, .feed { max-height: none; border-right: none; }
   .panel { border-bottom: 1px solid var(--border); }
 }
+
+/* Auth */
+.auth { display: grid; place-items: center; padding: 60px 16px; min-height: calc(100vh - 160px); }
+.auth-card { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; padding: 28px; }
+.auth-card h1 { margin: 0; font-size: 26px; }
+.auth-card p { margin: 0; }
+.link-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; font-size: 14px; }
+.link-btn:hover { color: var(--text); }
+.nav nav .credits { color: var(--accent); font-weight: 700; }
+
+/* Billing / admin */
+.page { max-width: 1100px; margin: 0 auto; padding: 40px 16px 80px; }
+.page h1 { margin: 0 0 6px; font-size: 32px; }
+.balance { font-size: 44px; font-weight: 800; color: var(--accent); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; background: var(--panel); }
+tr:last-child td { border-bottom: none; }
+.status { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--panel-2); }
+.status.paid, .status.succeeded { color: var(--accent); }
+.status.cancelled, .status.refunded, .status.failed { color: var(--danger); }
+.pay-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-bottom: 28px; }
+.stats .card b { display: block; font-size: 28px; }
+.prose { max-width: 760px; color: #d5d5dc; }
+.prose h2 { margin-top: 28px; font-size: 20px; }

@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@libsql/client": "0.15.15",
+    "aws4fetch": "1.0.20",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
