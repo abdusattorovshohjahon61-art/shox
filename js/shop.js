@@ -120,6 +120,7 @@
 
   /* ---------- Mahsulot oynasi ---------- */
   let current = null;
+  let lastOrderId = null;
   function openProduct(id) {
     const p = Store.product(id);
     if (!p) return;
@@ -295,11 +296,54 @@
       <div class="sum-row total"><span>${esc(t("cart.total"))}</span><span>${money(tt.total)}</span></div>`;
   }
 
+  /* To'lov usuliga qarab ko'rsatiladigan ma'lumot */
+  function paymentBlock(method, total, orderId) {
+    const st = Store.settings();
+    const link = method === "click" ? st.clickLink : method === "payme" ? st.paymeLink : "";
+    const showCard = method === "card" || ((method === "click" || method === "payme") && !link);
+    let html = `<div class="pay-box" data-method="${method}">
+      <p class="pay-hint">${esc(t("pay.hint." + method))}</p>`;
+    if (method !== "cash") {
+      html += `<div class="pay-amount"><span>${esc(t("pay.amount"))}</span><b>${money(total)}</b></div>`;
+    }
+    if (link) {
+      html += `<a class="btn btn-primary btn-block pay-link" href="${esc(link)}" target="_blank" rel="noopener">
+        ${esc(t("pay.open"))} <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4L10 14M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></a>`;
+    }
+    if (showCard && st.cardNumber) {
+      html += `<div class="pay-card">
+        <div class="pay-card-row">
+          <div><small>${esc(t("pay.card.title"))}</small><b class="card-num">${esc(st.cardNumber)}</b></div>
+          <button type="button" class="btn btn-small" data-copy="${esc(st.cardNumber)}">${esc(t("pay.copy"))}</button>
+        </div>
+        <div><small>${esc(t("pay.card.holder"))}</small><b>${esc(st.cardHolder || "")}</b></div>
+      </div>`;
+    }
+    if (method !== "cash" && orderId) {
+      html += `<p class="pay-note">${esc(t("pay.note", { id: orderId }))}</p>
+        <label class="btn btn-ghost btn-block receipt-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <span>${esc(t("pay.receipt"))}</span>
+          <input type="file" accept="image/*" id="receiptFile" hidden>
+        </label>
+        <button type="button" class="btn btn-primary btn-block" id="iPaidBtn">${esc(t("pay.iPaid"))}</button>`;
+    }
+    return html + "</div>";
+  }
+
+  function renderPayBlock() {
+    const m = document.querySelector('input[name="payment"]:checked');
+    const box = $("#payInfo");
+    if (!m || !box) return;
+    box.innerHTML = paymentBlock(m.value, cartTotals().total, null);
+  }
+
   function openCheckout() {
     closeAll();
     fillRegions();
     renderSummary();
     $("#checkoutError").textContent = "";
+    renderPayBlock();
     openModal("#checkoutModal");
   }
 
@@ -328,13 +372,17 @@
     const tt = cartTotals();
     const orders = Store.orders();
     const id = orders.reduce((m, o) => Math.max(m, o.id), 1000) + 1;
-    orders.unshift(Object.assign({ id, date: Date.now(), status: "new", items, lang: getLang() }, data, tt));
+    const payStatus = data.payment === "cash" ? "cod" : "unpaid";
+    orders.unshift(Object.assign({ id, date: Date.now(), status: "new", payStatus, items, lang: getLang() }, data, tt));
     Store.saveOrders(orders);
     Store.saveCart([]);
     f.reset();
     updateCounts(); renderCart(); renderGrid();
     closeAll();
     $("#successText").textContent = t("checkout.successText", { id, phone: data.phone });
+    lastOrderId = id;
+    $("#successPay").innerHTML = data.payment === "cash" ? "" :
+      `<h4>${esc(t("pay.afterOrder"))}</h4>` + paymentBlock(data.payment, tt.total, id);
     openModal("#successModal");
     if (window.FX) FX.confetti();
   }
@@ -427,6 +475,64 @@
   $("#cartList").addEventListener("click", onCartClick);
   $("#cartFoot").addEventListener("click", onCartClick);
   $("#checkoutForm").addEventListener("submit", submitOrder);
+  $("#checkoutForm").addEventListener("change", e => {
+    if (e.target.name === "payment") renderPayBlock();
+  });
+
+  /* Karta raqamidan nusxa olish, chek yuklash, "to'ladim" */
+  document.addEventListener("click", e => {
+    const c = e.target.closest("[data-copy]");
+    if (c) {
+      const txt = c.dataset.copy;
+      const done = () => toast(t("pay.copied"));
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+      } else fallbackCopy(txt, done);
+      return;
+    }
+    if (e.target.closest("#iPaidBtn")) {
+      setPayStatus(lastOrderId, "pending");
+      toast(t("pay.thanks"));
+      closeAll();
+    }
+  });
+  function fallbackCopy(txt, done) {
+    const ta = document.createElement("textarea");
+    ta.value = txt; ta.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (err) {}
+    ta.remove();
+  }
+  function setPayStatus(id, st, receipt) {
+    if (!id) return;
+    const list = Store.orders();
+    const o = list.find(x => x.id === id);
+    if (!o) return;
+    o.payStatus = st;
+    if (receipt) o.receipt = receipt;
+    Store.saveOrders(list);
+  }
+  document.addEventListener("change", e => {
+    if (e.target.id !== "receiptFile") return;
+    const file = e.target.files[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 620 / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = img.width * k; cv.height = img.height * k;
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        setPayStatus(lastOrderId, "pending", cv.toDataURL("image/jpeg", .75));
+        toast(t("pay.receiptAdded"));
+        const b = document.querySelector(".receipt-btn span");
+        if (b) b.textContent = t("pay.receiptAdded");
+      };
+      img.src = r.result;
+    };
+    r.readAsDataURL(file);
+  });
   $("#burger").addEventListener("click", () => document.body.classList.toggle("nav-open"));
   $("#nav").addEventListener("click", e => { if (e.target.tagName === "A") document.body.classList.remove("nav-open"); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });

@@ -379,6 +379,27 @@ canvas.shoe3d { width: 100%; height: 100%; display: block; }
 .summary { background: var(--surface2); border-radius: 14px; padding: 10px 16px 0; }
 .form-error { color: var(--danger); margin: 0; min-height: 1em; font-size: 14px; font-weight: 600; }
 
+/* ---------- To'lov bloki ---------- */
+.pay-box { display: flex; flex-direction: column; gap: 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 4px 0 10px; animation: rise .35s both; text-align: left; }
+.pay-hint { margin: 0; font-size: 14px; color: var(--muted); }
+.pay-amount { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--muted); }
+.pay-amount b { font-size: 20px; color: var(--accent); }
+.pay-link svg { width: 18px; height: 18px; }
+.pay-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.pay-card small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.pay-card b { font-size: 17px; font-weight: 700; letter-spacing: .04em; }
+.pay-card .card-num { font-size: 19px; letter-spacing: .08em; }
+.pay-card-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.pay-note { margin: 0; font-size: 13px; color: var(--warn); font-weight: 600; }
+.receipt-btn { cursor: pointer; }
+.receipt-btn svg { width: 18px; height: 18px; }
+#successPay { margin: 14px 0; }
+#successPay h4 { margin: 0 0 8px; font-size: 15px; }
+.receipt-link { margin-left: 6px; font-size: 16px; text-decoration: none; }
+.pay-select.paid { color: var(--ok); font-weight: 700; }
+.pay-select.pending { color: var(--warn); font-weight: 700; }
+.pay-select.unpaid { color: var(--danger); font-weight: 600; }
+
 .success-box { text-align: center; width: min(440px, 100%); }
 .check-anim svg { width: 90px; height: 90px; stroke: var(--ok); stroke-width: 3; margin: 0 auto 10px; }
 .check-anim circle { stroke-dasharray: 160; stroke-dashoffset: 160; animation: draw .7s forwards; }

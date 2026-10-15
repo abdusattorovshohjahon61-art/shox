@@ -4,6 +4,9 @@
   const $ = s => document.querySelector(s);
   const SESSION = "nilufar_ceo";
   const STATUSES = ["new", "confirmed", "shipping", "delivered", "cancelled"];
+  const PAY_STATUSES = ["unpaid", "pending", "paid", "cod"];
+  /* Eski buyurtmalarda maydon bo'lmasa — to'lov usulidan kelib chiqamiz */
+  const payOf = o => o.payStatus || (o.payment === "cash" ? "cod" : "unpaid");
   const PALETTE = ["#b3123b", "#e0457b", "#c9a227", "#7c8cff", "#12a26b", "#ff8f5a", "#5bc0eb", "#9b5de5"];
   let view = "dashboard";
 
@@ -67,7 +70,9 @@
       avg: valid.length ? revenue / valid.length : 0,
       conversion: views ? valid.length / views * 100 : 0,
       trend: revPrev7 ? (rev7 - revPrev7) / revPrev7 * 100 : 0,
-      newCount: orders.filter(o => o.status === "new").length
+      newCount: orders.filter(o => o.status === "new").length,
+      unpaid: valid.filter(o => o.payStatus === "unpaid" || (!o.payStatus && o.payment !== "cash")).length,
+      pendingPay: valid.filter(o => o.payStatus === "pending").length
     };
   }
 
@@ -177,6 +182,7 @@
         <div class="kpi"><span>${esc(t("kpi.avg"))}</span><b>${money(m.avg)}</b></div>
         <div class="kpi"><span>${esc(t("kpi.conversion"))}</span><b>${m.conversion.toFixed(1)}%</b></div>
         <div class="kpi"><span>${esc(t("kpi.newOrders"))}</span><b>${m.newCount}</b></div>
+        <div class="kpi"><span>${esc(t("payst.pending"))}</span><b>${m.pendingPay}</b><small class="muted">${esc(t("payst.unpaid"))}: ${m.unpaid}</small></div>
       </div>
       <div class="panels">
         <div class="panel wide"><h3>${esc(t("chart.sales"))}</h3><div class="chart">${lineChart(salesByDay(m.valid))}</div></div>
@@ -403,7 +409,7 @@
     if (!list.length) return `<p class="muted">${esc(t("or.empty"))}</p>`;
     const prods = Store.products();
     return `<div class="table-wrap"><table>
-      <thead><tr><th>${esc(t("or.id"))}</th><th>${esc(t("or.date"))}</th><th>${esc(t("or.client"))}</th><th>${esc(t("or.region"))}</th>${compact ? "" : `<th>${esc(t("or.items"))}</th>`}<th>${esc(t("or.sum"))}</th><th>${esc(t("or.status"))}</th></tr></thead>
+      <thead><tr><th>${esc(t("or.id"))}</th><th>${esc(t("or.date"))}</th><th>${esc(t("or.client"))}</th><th>${esc(t("or.region"))}</th>${compact ? "" : `<th>${esc(t("or.items"))}</th>`}<th>${esc(t("or.sum"))}</th><th>${esc(t("pay.status"))}</th><th>${esc(t("or.status"))}</th></tr></thead>
       <tbody>${list.map(o => `<tr>
         <td><b>#${o.id}</b></td>
         <td class="muted">${new Date(o.date).toLocaleString(getLang() === "en" ? "en-GB" : "ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
@@ -411,6 +417,12 @@
         <td style="white-space:normal;min-width:160px"><b>${esc(regionName(o.region))}</b>${o.district ? ", " + esc(o.district) : ""}<br><small class="muted">${esc(o.address)}${o.landmark ? " · " + esc(o.landmark) : ""}</small>${o.note ? `<br><small>💬 ${esc(o.note)}</small>` : ""}</td>
         ${compact ? "" : `<td class="order-items">${o.items.map(it => { const p = prods.find(x => x.id === it.id); return `${esc(p ? pname(p) : it.id)} · ${it.size} · ×${it.qty}`; }).join("<br>")}<br><small>${esc(t("pay." + o.payment))}</small></td>`}
         <td><b>${money(o.total)}</b></td>
+        <td>
+          <select class="status-select pay-select ${payOf(o)}" data-paystatus="${o.id}">
+            ${PAY_STATUSES.map(ps => `<option value="${ps}" ${ps === payOf(o) ? "selected" : ""}>${esc(t("payst." + ps))}</option>`).join("")}
+          </select>
+          ${o.receipt ? `<a href="${esc(o.receipt)}" target="_blank" class="receipt-link" title="chek">🧾</a>` : ""}
+        </td>
         <td><select class="status-select" data-status="${o.id}">${STATUSES.map(s => `<option value="${s}" ${s === o.status ? "selected" : ""}>${esc(t("st." + s))}</option>`).join("")}</select></td>
       </tr>`).join("")}</tbody></table></div>`;
   }
@@ -426,6 +438,13 @@
     $("#view-orders").querySelectorAll("[data-of]").forEach(b => b.addEventListener("click", () => { orderFilter = b.dataset.of; orders(); }));
   }
   document.addEventListener("change", e => {
+    const ps = e.target.closest("[data-paystatus]");
+    if (ps) {
+      const list = Store.orders();
+      const o = list.find(x => x.id === +ps.dataset.paystatus);
+      if (o) { o.payStatus = ps.value; Store.saveOrders(list); toast(t("payst." + o.payStatus)); render(); }
+      return;
+    }
     const s = e.target.closest("[data-status]");
     if (!s) return;
     const list = Store.orders();
@@ -512,6 +531,15 @@
           <label class="field">${esc(t("set.freeFrom"))}<input name="freeFrom" type="number" min="0" step="10000" value="${s.freeFrom}"></label>
           <button class="btn btn-primary">${esc(t("save"))}</button>
         </form>
+        <form class="panel form" id="payForm">
+          <h3>${esc(t("set.payment"))}</h3>
+          <p class="muted" style="font-size:13px;margin:0">${esc(t("set.payHint"))}</p>
+          <label class="field">${esc(t("set.cardNumber"))}<input name="cardNumber" value="${esc(s.cardNumber || "")}" placeholder="8600 0000 0000 0000"></label>
+          <label class="field">${esc(t("set.cardHolder"))}<input name="cardHolder" value="${esc(s.cardHolder || "")}" placeholder="NILUFAR SHOES"></label>
+          <label class="field">${esc(t("set.clickLink"))}<input name="clickLink" value="${esc(s.clickLink || "")}" placeholder="https://my.click.uz/..."></label>
+          <label class="field">${esc(t("set.paymeLink"))}<input name="paymeLink" value="${esc(s.paymeLink || "")}" placeholder="https://payme.uz/..."></label>
+          <button class="btn btn-primary">${esc(t("save"))}</button>
+        </form>
         <div class="panel form">
           <h3>${esc(t("set.data"))}</h3>
           <button class="btn" id="exportBtn">⬇ ${esc(t("set.export"))}</button>
@@ -527,6 +555,17 @@
     $("#shopForm").addEventListener("submit", e => {
       e.preventDefault();
       Store.saveSettings(Object.assign(Store.settings(), { deliveryPrice: +e.target.deliveryPrice.value || 0, freeFrom: +e.target.freeFrom.value || 0 }));
+      toast(t("set.saved"));
+    });
+    $("#payForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const f = e.target;
+      Store.saveSettings(Object.assign(Store.settings(), {
+        cardNumber: f.cardNumber.value.trim(),
+        cardHolder: f.cardHolder.value.trim(),
+        clickLink: f.clickLink.value.trim(),
+        paymeLink: f.paymeLink.value.trim()
+      }));
       toast(t("set.saved"));
     });
     $("#exportBtn").addEventListener("click", () => {

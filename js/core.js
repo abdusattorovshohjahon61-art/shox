@@ -6,7 +6,11 @@
     storeName: "Nilufar Shoes",
     password: "admin123",
     deliveryPrice: 30000,
-    freeFrom: 500000
+    freeFrom: 500000,
+    cardNumber: "8600 1234 5678 9012",
+    cardHolder: "NILUFAR SHOES",
+    clickLink: "",
+    paymeLink: ""
   };
 
   /* ---------- Saqlash ---------- */
@@ -111,6 +115,11 @@
         payment: ["cash", "click", "payme", "card"][rnd(4)], note: "",
         items, subtotal, delivery, total: subtotal + delivery, status
       };
+      // To'lov holati: naqd — yetkazishda, boshqalari — holatiga qarab
+      o.payStatus = o.payment === "cash" ? "cod"
+        : status === "delivered" ? "paid"
+          : status === "cancelled" ? "unpaid"
+            : ["paid", "pending", "unpaid"][rnd(3)];
       orders.push(o);
       items.forEach(it => {
         stats[it.id].carts += it.qty + rnd(2);
