@@ -1,6 +1,6 @@
 /* Nilufar Shoes — mijoz tomoni: katalog, sevimlilar, savat, buyurtma */
 (function () {
-  const { Store, t, money, esc, pname, pdesc, productVisual, toast, applyI18n, getLang } = NS;
+  const { Store, t, money, esc, pname, pdesc, productVisual, productVisual3D, toast, applyI18n, getLang } = NS;
   const $ = s => document.querySelector(s);
 
   const state = { cat: "all", q: "", sort: "popular", favOnly: false };
@@ -58,7 +58,7 @@
             ${sale ? `<span class="tag tag-sale">-${off}%</span>` : ""}
           </div>
           <button class="fav-btn ${favs.includes(p.id) ? "on" : ""}" data-fav="${p.id}" aria-label="fav">${heartSVG}</button>
-          <div class="card-img">${productVisual(p)}</div>
+          <div class="card-img">${productVisual3D(p)}</div>
           ${p.stock <= 0 ? `<div class="sold-out">${esc(t("product.outStock"))}</div>` : ""}
         </div>
         <div class="card-body">
@@ -78,6 +78,7 @@
       </article>`;
     }).join("");
     window.FX && FX.refresh();
+    window.Shoe3D && Shoe3D.mountAll($("#grid"));
   }
 
   /* ---------- Sevimlilar ---------- */
@@ -128,6 +129,8 @@
     openModal("#productModal");
   }
 
+  function mount3D(sel) { window.Shoe3D && Shoe3D.mountAll(document.querySelector(sel)); }
+
   function renderProduct() {
     const p = Store.product(current.id);
     const favs = Store.favs();
@@ -135,7 +138,8 @@
     $("#productBody").innerHTML = `
       <div class="pd">
         <div class="pd-media" style="--accent:${esc(current.color)}">
-          <div class="pd-img" id="pdImg">${productVisual(p, current.color)}</div>
+          <div class="pd-img" id="pdImg">${productVisual3D(p, current.color, "full")}</div>
+          ${p.image ? "" : `<span class="view3d">${esc(t("product.view3d"))}</span>`}
         </div>
         <div class="pd-info">
           <span class="card-cat">${esc(t("cat." + p.category))}</span>
@@ -163,12 +167,24 @@
           </div>
         </div>
       </div>`;
+    mount3D("#productBody");
   }
 
   function onProductClick(e) {
     const p = Store.product(current.id);
     const c = e.target.closest("[data-color]");
-    if (c) { current.color = c.dataset.color; renderProduct(); return; }
+    if (c) {
+      current.color = c.dataset.color;
+      const cv = document.querySelector("#pdImg canvas.shoe3d");
+      if (cv && cv.__shoe3d) {
+        cv.dataset.color = current.color;
+        cv.__shoe3d.setColor(current.color);
+        document.querySelectorAll("[data-color]").forEach(b => b.classList.toggle("active", b.dataset.color === current.color));
+        const media = document.querySelector(".pd-media");
+        if (media) media.style.setProperty("--accent", current.color);
+      } else renderProduct();
+      return;
+    }
     const s = e.target.closest("[data-size]");
     if (s) { current.size = +s.dataset.size; renderProduct(); return; }
     const q = e.target.closest("[data-qty]");

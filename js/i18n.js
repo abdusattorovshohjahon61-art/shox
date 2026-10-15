@@ -61,6 +61,7 @@ window.I18N = {
     "product.favRemove": "Sevimlilardan olib tashlandi",
     "product.desc": "Tavsif",
     "product.qty": "Soni",
+    "product.view3d": "360° — ushlab aylantiring",
 
     // Savat
     "cart.title": "Savat",
@@ -291,6 +292,7 @@ window.I18N = {
     "product.favRemove": "Удалено из избранного",
     "product.desc": "Описание",
     "product.qty": "Кол-во",
+    "product.view3d": "360° — зажмите и поверните",
 
     "cart.title": "Корзина",
     "cart.empty": "Ваша корзина пуста",
@@ -515,6 +517,7 @@ window.I18N = {
     "product.favRemove": "Removed from favorites",
     "product.desc": "Description",
     "product.qty": "Qty",
+    "product.view3d": "360° — drag to rotate",
 
     "cart.title": "Cart",
     "cart.empty": "Your cart is empty",

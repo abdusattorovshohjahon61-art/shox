@@ -252,6 +252,18 @@ h2 { font-family: "Playfair Display", Georgia, serif; font-size: clamp(28px, 4vw
 .card-img { width: 78%; transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
 .card-img img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1; border-radius: 12px; }
 .shoe-svg { stroke: none; }
+canvas.shoe3d { width: 100%; height: 100%; display: block; }
+.card-img canvas.shoe3d { aspect-ratio: 200 / 170; height: auto; }
+.pd-img canvas.shoe3d { aspect-ratio: 200 / 170; height: auto; cursor: grab; }
+.pd-img canvas.shoe3d.grabbing { cursor: grabbing; }
+.pd-media { position: relative; }
+.view3d {
+  position: absolute; left: 50%; bottom: 18px; translate: -50% 0; z-index: 2;
+  padding: 7px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
+  background: var(--glass); backdrop-filter: blur(8px); border: 1px solid var(--line); color: var(--text);
+  white-space: nowrap; animation: fadeUp3d .6s .3s both;
+}
+@keyframes fadeUp3d { from { opacity: 0; transform: translateY(10px); } }
 .card-img .shoe-svg, .pd-img .shoe-svg, .line-img .shoe-svg { width: 100%; height: auto; }
 .card:hover .card-img { transform: scale(1.1) rotate(-6deg) translateY(-6px); }
 .card-tags { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; z-index: 1; }

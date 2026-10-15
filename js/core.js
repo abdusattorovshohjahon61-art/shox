@@ -230,7 +230,7 @@
     heels: '<path d="M18 142 C18 130 28 124 46 123 C66 122 84 116 102 104 C118 93 132 80 148 70 C156 65 166 64 173 68 C177 86 177 104 171 120 L122 136 C100 143 60 146 30 146 C22 146 18 145 18 142 Z" fill="C"/><path d="M104 106 C120 96 136 84 150 76 C158 72 166 72 171 74 C171 80 169 84 165 86 C146 95 126 104 104 106 Z" fill="D"/><path d="M155 120 L172 117 L169 168 L163 168 Z" fill="D"/><path d="M18 142 C18 145 22 146 30 146 C60 146 100 143 122 136 L124 140 C100 148 60 150 30 150 C22 150 18 148 18 142 Z" fill="D"/>',
     sneakers: '<path d="M16 120 C16 96 30 80 52 78 L84 76 C96 76 104 88 116 94 L160 108 C178 113 186 122 186 132 L186 140 L16 140 Z" fill="C"/><path d="M16 140 L186 140 L186 150 C186 154 182 156 178 156 L22 156 C18 156 16 154 16 150 Z" fill="D"/><path d="M60 92 L76 108 M74 88 L90 104 M88 92 L102 104" stroke="D" stroke-width="5" stroke-linecap="round"/>',
     boots: '<path d="M56 24 L112 24 L114 112 C130 116 160 122 174 130 C184 136 186 144 186 150 L186 154 L56 154 Z" fill="C"/><path d="M56 154 L186 154 L186 166 L56 166 Z" fill="D"/><path d="M56 40 L112 40" stroke="D" stroke-width="6"/>',
-    sandals: '<path d="M18 132 C18 124 26 120 40 120 L170 120 C182 120 188 126 188 132 C188 138 182 142 170 142 L40 142 C26 142 18 138 18 132 Z" fill="D"/><path d="M60 122 C64 96 92 88 108 98 C116 104 116 114 114 122" stroke="C" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M126 122 C132 104 152 100 162 112" stroke="C" stroke-width="10" fill="none" stroke-linecap="round"/>',
+    sandals: '<path d="M18 132 C18 122 28 118 44 118 L168 118 C182 118 188 124 188 132 C188 140 182 144 168 144 L44 144 C28 144 18 142 18 132 Z" fill="C"/><path d="M58 120 C62 94 96 84 118 95 C133 102 139 110 142 120 L126 120 C122 108 112 101 99 101 C85 101 77 108 73 120 Z" fill="D"/><path d="M132 120 C136 104 152 98 164 106 C170 110 172 115 173 120 L160 120 C157 114 150 111 144 114 C140 116 139 118 138 120 Z" fill="D"/>',
     flats: '<path d="M18 120 C18 100 36 92 60 92 L120 94 C150 96 176 104 186 118 C190 126 186 136 176 136 L30 136 C22 136 18 130 18 120 Z" fill="C"/><path d="M24 136 L180 136 L178 142 L28 142 Z" fill="D"/><path d="M110 100 C116 92 128 92 132 100 C128 108 116 108 110 100 Z" fill="D"/>',
     loafers: '<path d="M16 122 C16 98 34 86 60 84 L110 84 C140 86 172 98 184 116 C190 126 186 138 174 138 L28 138 C20 138 16 132 16 122 Z" fill="C"/><path d="M16 138 L184 138 L184 148 L16 148 Z" fill="D"/><path d="M96 92 L140 100" stroke="D" stroke-width="6" stroke-linecap="round"/>'
   };
@@ -254,6 +254,14 @@
   function productVisual(p, color) {
     if (p.image) return '<img src="' + esc(p.image) + '" alt="' + esc(pname(p)) + '" loading="lazy">';
     return shoeSVG(p.category, color || (p.colors && p.colors[0]));
+  }
+
+  /* Vitrina uchun 3D ko'rinish (Shoe3D bo'lmasa — SVG) */
+  function productVisual3D(p, color, mode) {
+    if (p.image) return '<img src="' + esc(p.image) + '" alt="' + esc(pname(p)) + '" loading="lazy">';
+    const c = color || (p.colors && p.colors[0]) || "#b3123b";
+    if (window.Shoe3D && Shoe3D.supported) return Shoe3D.markup(p.category, c, mode);
+    return shoeSVG(p.category, c);
   }
 
   function download(name, text) {
@@ -290,6 +298,7 @@
 
   window.NS = {
     Store, t, setLang, getLang: () => lang, applyI18n, toggleTheme, money, esc, pname, pdesc,
-    regionName, toast, shoeSVG, productVisual, download, phoneMask, bindCommon, rnd
+    regionName, toast, shoeSVG, productVisual, productVisual3D, download, phoneMask, bindCommon, rnd,
+    SHOE_PATHS, shade
   };
 })();
