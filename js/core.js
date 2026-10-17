@@ -269,7 +269,14 @@
   function productVisual3D(p, color, mode) {
     if (p.image) return '<img src="' + esc(p.image) + '" alt="' + esc(pname(p)) + '" loading="lazy">';
     const c = color || (p.colors && p.colors[0]) || "#b3123b";
-    if (window.Shoe3D && Shoe3D.supported) return Shoe3D.markup(p.category, c, mode);
+    if (window.Shoe3D && Shoe3D.supported) {
+      // Har bir mahsulot o'z fazasida tebransin — setka bir xil harakatlanmasin
+      const seed = p.id.split("").reduce((a, ch) => a + ch.charCodeAt(0), 0);
+      return Shoe3D.markup(p.category, c, mode, {
+        phase: ((seed % 63) / 10).toFixed(2),
+        speed: (0.45 + (seed % 5) * 0.06).toFixed(2)
+      });
+    }
     return shoeSVG(p.category, c);
   }
 

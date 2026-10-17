@@ -265,7 +265,9 @@ window.Shoe3D = (function () {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
+    const idle = canvas.dataset.idle !== "0" && !interactive && !reduce;
     const st = {
+      base: -0.17,
       angle: interactive ? -0.22 : -0.17,
       tilt: 0.17,
       color: canvas.dataset.color || "#b3123b",
@@ -273,7 +275,12 @@ window.Shoe3D = (function () {
       hover: false,
       dragging: false,
       raf: 0,
-      visible: true
+      visible: true,
+      idle,
+      phase: parseFloat(canvas.dataset.phase || (Math.random() * 6.28)),
+      amp: parseFloat(canvas.dataset.amp || 0.30),   // tebranish kengligi (radian)
+      speed: parseFloat(canvas.dataset.speed || 0.55),
+      clock: 0
     };
 
     function size() {
@@ -302,15 +309,21 @@ window.Shoe3D = (function () {
       last = now;
       if (!st.visible) return;
       if (st.dragging) return;
-      if (st.spin || st.hover) {
-        st.angle += dt * (st.hover && !interactive ? 1.1 : 0.55);
+      st.clock += dt;
+      if (st.spin) {                       // mahsulot oynasi: to'liq aylanish
+        st.angle += dt * 0.55;
         render();
-      } else if (st.ease) {
-        // Sichqoncha ketgach, boshlang'ich burchakka qaytish
-        const target = -0.17;
+      } else if (st.hover) {               // sichqoncha ustida: tezroq aylanadi
+        st.angle += dt * 1.25;
+        render();
+      } else if (st.ease) {                // sichqoncha ketgach — tebranishga qaytish
+        const target = st.base + Math.sin(st.clock * st.speed + st.phase) * st.amp;
         let diff = ((target - st.angle + Math.PI) % (Math.PI * 2)) - Math.PI;
-        if (Math.abs(diff) < 0.01) { st.angle = target; st.ease = false; }
-        else st.angle += diff * Math.min(1, dt * 6);
+        if (Math.abs(diff) < 0.02) { st.ease = false; }
+        else st.angle += diff * Math.min(1, dt * 4);
+        render();
+      } else if (st.idle) {                // tinch holat: sekin tebranish
+        st.angle = st.base + Math.sin(st.clock * st.speed + st.phase) * st.amp;
         render();
       }
     }
@@ -396,9 +409,14 @@ window.Shoe3D = (function () {
     } catch (e) { return false; }
   })();
 
-  function markup(category, color, mode) {
+  function markup(category, color, mode, opt) {
+    const o = opt || {};
     return '<canvas class="shoe3d" data-cat="' + category + '" data-color="' + color +
-      '" data-mode="' + (mode || "card") + '" aria-hidden="true"></canvas>';
+      '" data-mode="' + (mode || "card") + '"' +
+      (o.phase != null ? ' data-phase="' + o.phase + '"' : "") +
+      (o.amp != null ? ' data-amp="' + o.amp + '"' : "") +
+      (o.speed != null ? ' data-speed="' + o.speed + '"' : "") +
+      ' aria-hidden="true"></canvas>';
   }
 
   return { mount, mountAll, markup, supported };
