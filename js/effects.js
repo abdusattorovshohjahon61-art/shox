@@ -3,46 +3,54 @@
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fine = window.matchMedia("(pointer: fine)").matches;
 
-  /* Zarrachalar foni (hero) */
-  function particles() {
-    const cv = document.getElementById("particles");
-    if (!cv || reduce) return;
-    const ctx = cv.getContext("2d");
-    let w, h, pts = [];
-    const mouse = { x: -999, y: -999 };
-    function size() {
-      const r = cv.parentElement.getBoundingClientRect();
-      w = cv.width = r.width * devicePixelRatio; h = cv.height = r.height * devicePixelRatio;
-      cv.style.width = r.width + "px"; cv.style.height = r.height + "px";
-      const n = Math.min(90, Math.floor(r.width / 16));
-      pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4, r: (Math.random() * 2 + .6) * devicePixelRatio }));
+  /* So'zma-so'z chiqish: sarlavha so'zlari navbatma-navbat ko'tariladi */
+  function splitWords(el) {
+    const txt = (el.dataset.text || el.textContent).trim();
+    el.dataset.text = txt;
+    el.innerHTML = txt.split(/\s+/).map((w, i) =>
+      '<span style="--d:' + (0.15 + i * 0.08).toFixed(2) + 's">' + w.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</span>'
+    ).join(' ');
+  }
+
+  function revealOnView(el) {
+    if (reduce) { el.classList.add('in'); return; }
+    new IntersectionObserver((es, ob) => es.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); ob.unobserve(e.target); }
+    }), { threshold: 0.2 }).observe(el);
+  }
+
+  function heroText() {
+    document.querySelectorAll('[data-split-words]').forEach(el => {
+      splitWords(el);
+      revealOnView(el);
+    });
+    document.querySelectorAll('.fade-up').forEach(el => {
+      el.style.setProperty('--d', (parseFloat(el.dataset.fade) || 0) + 's');
+      revealOnView(el);
+    });
+  }
+  /* Til almashtirilganda sarlavha qayta bo'linadi */
+  window.addEventListener('lang:change', () => {
+    document.querySelectorAll('[data-split-words]').forEach(el => {
+      delete el.dataset.text;
+      splitWords(el);
+      el.classList.add('in');
+    });
+  });
+
+  /* Fon video: ko'rinmaganda to'xtab turadi (batareya va protsessor uchun) */
+  function bgVideo() {
+    const v = document.getElementById('bgVideo');
+    if (!v) return;
+    if (reduce) { v.removeAttribute('autoplay'); v.pause(); return; }
+    const play = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
+    play();
+    document.addEventListener('click', play, { once: true });
+    const hero = document.querySelector('.hero');
+    if (hero && 'IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => { e.isIntersecting ? play() : v.pause(); },
+        { threshold: 0.02 }).observe(hero);
     }
-    cv.parentElement.addEventListener("mousemove", e => { const r = cv.getBoundingClientRect(); mouse.x = (e.clientX - r.left) * devicePixelRatio; mouse.y = (e.clientY - r.top) * devicePixelRatio; });
-    cv.parentElement.addEventListener("mouseleave", () => { mouse.x = mouse.y = -999; });
-    window.addEventListener("resize", size);
-    size();
-    let visible = true;
-    new IntersectionObserver(([en]) => { visible = en.isIntersecting; }).observe(cv);
-    (function loop() {
-      requestAnimationFrame(loop);
-      if (!visible) return;
-      const dark = document.documentElement.dataset.theme === "dark";
-      const col = dark ? "255,200,215" : "179,18,59";
-      ctx.clearRect(0, 0, w, h);
-      const link = 120 * devicePixelRatio;
-      for (const p of pts) {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > w) p.vx *= -1;
-        if (p.y < 0 || p.y > h) p.vy *= -1;
-        const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.hypot(dx, dy);
-        if (d < 100 * devicePixelRatio) { p.x += dx / d * 1.5; p.y += dy / d * 1.5; }
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fillStyle = `rgba(${col},.55)`; ctx.fill();
-      }
-      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
-        const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d < link) { ctx.strokeStyle = `rgba(${col},${(1 - d / link) * .22})`; ctx.lineWidth = devicePixelRatio * .7; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      }
-    })();
   }
 
   /* Scroll paytida paydo bo'lish */
@@ -102,26 +110,16 @@
     els.forEach(el => ob.observe(el));
   }
 
-  /* Hero: suzuvchi poyabzallar va parallaks */
-  function hero() {
-    const map = { fs1: ["heels", "#b3123b"], fs2: ["sneakers", "#7c8cff"], fs3: ["boots", "#c49a6c"] };
-    Object.keys(map).forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = NS.shoeSVG(map[id][0], map[id][1]); });
-    const v = document.getElementById("heroVisual");
-    if (!v || !fine || reduce) return;
-    document.querySelector(".hero").addEventListener("mousemove", e => {
-      const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5;
-      v.querySelectorAll(".float-shoe, .hero-logo-card, .ring").forEach((el, i) => {
-        const k = (i % 3 + 1) * 14;
-        el.style.translate = `${x * k}px ${y * k}px`;
-      });
-    });
-  }
-
   /* Header scroll holati */
   function header() {
     const h = document.querySelector(".header");
     if (!h) return;
-    const on = () => h.classList.toggle("scrolled", scrollY > 30);
+    const hero = document.querySelector(".hero");
+    const on = () => {
+      h.classList.toggle("scrolled", scrollY > 30);
+      // Hero (video) ustida turganda — shaffof va oq matnli header
+      if (hero) h.classList.toggle("over-video", scrollY < hero.offsetHeight - 90);
+    };
     window.addEventListener("scroll", on, { passive: true }); on();
   }
 
@@ -187,8 +185,9 @@
 
   function refresh() { reveal(); tilt(); }
 
-  document.addEventListener("DOMContentLoaded", () => { particles(); counters(); hero(); header(); magnetic(); cursorGlow(); refresh(); });
-  if (document.readyState !== "loading") { particles(); counters(); hero(); header(); magnetic(); cursorGlow(); refresh(); }
+  function boot() { heroText(); bgVideo(); counters(); header(); magnetic(); cursorGlow(); refresh(); }
+  document.addEventListener("DOMContentLoaded", boot);
+  if (document.readyState !== "loading") boot();
 
   window.FX = { refresh, burst, flyToCart, confetti };
 })();

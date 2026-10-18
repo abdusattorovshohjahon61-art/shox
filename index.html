@@ -107,38 +107,34 @@
   </header>
 
   <main>
+    <!-- FON VIDEO (butun ekran, qotirilgan) -->
+    <video class="bg-video" id="bgVideo" autoplay muted loop playsinline preload="metadata"
+           poster="assets/hero-poster.jpg" aria-hidden="true">
+      <source src="assets/hero-bg.webm" type="video/webm">
+      <source src="assets/hero-bg.mp4" type="video/mp4">
+    </video>
+    <div class="bg-scrim" aria-hidden="true"></div>
+
     <!-- HERO -->
     <section class="hero">
-      <canvas id="particles" aria-hidden="true"></canvas>
-      <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
-      <div class="container hero-inner">
-        <div class="hero-text">
-          <span class="chip shine" data-i18n="hero.badge">Yangi kolleksiya 2026</span>
-          <h1 class="hero-title" data-i18n="hero.title">Har bir qadamingiz — nafislik</h1>
-          <p class="hero-sub" data-i18n="hero.subtitle">Nilufar Shoes — ayollar va erkaklar uchun zamonaviy, qulay va sifatli oyoq kiyimlar. O'zbekiston bo'ylab yetkazib berish.</p>
-          <div class="hero-cta">
-            <a href="#catalog" class="btn btn-primary magnetic"><span data-i18n="hero.cta">Xarid qilish</span></a>
-            <a href="#catalog" class="btn btn-ghost" data-i18n="hero.cta2">Kolleksiyani ko'rish</a>
-          </div>
-          <div class="hero-stats">
-            <div><b class="count" data-to="12000">0</b><b>+</b><span data-i18n="hero.stat1">mamnun mijoz</span></div>
-            <div><b class="count" data-to="350">0</b><b>+</b><span data-i18n="hero.stat2">model</span></div>
-            <div><b class="count" data-to="14">0</b><span data-i18n="hero.stat3">viloyatga yetkazamiz</span></div>
-          </div>
+      <div class="hero-block">
+        <span class="hero-eyebrow fade-up" data-fade="0.05" data-i18n="hero.badge">Yangi kolleksiya 2026</span>
+        <h1 class="hero-title" data-i18n="hero.title" data-split-words>Har bir qadamingiz — nafislik</h1>
+        <p class="hero-sub fade-up" data-fade="0.9" data-i18n="hero.subtitle">Nilufar Shoes — ayollar va erkaklar uchun zamonaviy, qulay va sifatli oyoq kiyimlar. O'zbekiston bo'ylab yetkazib berish.</p>
+        <div class="hero-cta fade-up" data-fade="1.05">
+          <a href="#catalog" class="btn btn-primary magnetic"><span data-i18n="hero.cta">Xarid qilish</span></a>
+          <a href="#catalog" class="btn btn-ghost" data-i18n="hero.cta2">Kolleksiyani ko'rish</a>
         </div>
-        <div class="hero-visual" id="heroVisual">
-          <div class="ring r1"></div><div class="ring r2"></div>
-          <div class="hero-logo-card">
-            <img src="assets/logo.png" alt="Nilufar Shoes">
-          </div>
-          <div class="float-shoe fs1" id="fs1"></div>
-          <div class="float-shoe fs2" id="fs2"></div>
-          <div class="float-shoe fs3" id="fs3"></div>
+        <div class="hero-stats fade-up" data-fade="1.2">
+          <div><b class="count" data-to="12000">0</b><b>+</b><span data-i18n="hero.stat1">mamnun mijoz</span></div>
+          <div><b class="count" data-to="350">0</b><b>+</b><span data-i18n="hero.stat2">model</span></div>
+          <div><b class="count" data-to="14">0</b><span data-i18n="hero.stat3">viloyatga yetkazamiz</span></div>
         </div>
       </div>
       <a href="#catalog" class="scroll-hint" aria-label="scroll"><span></span></a>
     </section>
 
+    <div class="page-body">
     <div class="marquee" aria-hidden="true"><div class="marquee-track" id="marquee"></div></div>
 
     <!-- AFZALLIKLAR -->
@@ -208,6 +204,7 @@
         <div class="contact reveal"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg><span data-i18n="contacts.instagram">@nilufar.shoes</span></div>
       </div>
     </section>
+    </div><!-- /page-body -->
   </main>
 
   <footer class="footer">
