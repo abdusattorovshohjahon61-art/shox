@@ -69,6 +69,9 @@
       cv.dataset.spin = "0";       // o'z-o'zidan to'liq aylanmaydi, sekin tebranadi
       Shoe3D.mountAll(stage);
     }
+    if (p.has360 && window.Spin360) {
+      Spin360.mountFor(stage, p.id, { label: t("spin.badge") });
+    }
     stage.classList.remove("in");
     requestAnimationFrame(() => stage.classList.add("in"));
   }

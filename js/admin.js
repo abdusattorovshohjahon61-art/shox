@@ -262,7 +262,7 @@
       <div class="panel"><div class="table-wrap"><table>
         <thead><tr><th>${esc(t("an.product"))}</th><th>${esc(t("pr.category"))}</th><th>${esc(t("pr.price"))}</th><th>${esc(t("pr.stock"))}</th><th>${esc(t("pr.sizes"))}</th><th></th></tr></thead>
         <tbody id="prodRows">${list.map(p => `<tr data-row="${esc([p.name.uz, p.name.ru, p.name.en].join(" ").toLowerCase())}">
-          <td><div class="t-prod"><div class="line-img">${productVisual(p)}</div><div><b>${esc(pname(p))}</b>${p.isNew ? ` <span class="pill star">${esc(t("product.new"))}</span>` : ""}</div></div></td>
+          <td><div class="t-prod"><div class="line-img">${productVisual(p)}</div><div><b>${esc(pname(p))}</b>${p.isNew ? ` <span class="pill star">${esc(t("product.new"))}</span>` : ""}${p.has360 ? ` <span class="pill ok">360°</span>` : ""}</div></div></td>
           <td>${esc(t("cat." + p.category))}</td>
           <td><b>${money(p.price)}</b>${p.oldPrice ? `<br><s class="muted">${money(p.oldPrice)}</s>` : ""}</td>
           <td><span class="pill ${p.stock <= 0 ? "bad" : p.stock < 5 ? "warn" : "ok"}">${p.stock}</span></td>
@@ -287,6 +287,7 @@
       Store.saveProducts(Store.products().filter(p => p.id !== del.dataset.del));
       Store.saveFavs(Store.favs().filter(id => id !== del.dataset.del));
       Store.saveCart(Store.cart().filter(c => c.id !== del.dataset.del));
+      if (window.Frames) Frames.remove(del.dataset.del);
       render();
     }
   }
@@ -330,11 +331,57 @@
           </div>
         </div>
       </div>
+      <div class="field spin-field">${esc(t("spin.title"))}
+        <p class="muted" style="font-size:12.5px;margin:0">${esc(t("spin.hint"))}</p>
+        <div class="spin-row">
+          <label class="btn btn-small" style="cursor:pointer">${esc(t("spin.upload"))}
+            <input type="file" accept="image/*" multiple id="spinFiles" hidden>
+          </label>
+          <span id="spinInfo" class="muted">${esc(t("spin.none"))}</span>
+          <button type="button" class="link-btn" id="spinClear" hidden>${esc(t("spin.clear"))}</button>
+        </div>
+        <div class="spin-strip" id="spinStrip"></div>
+      </div>
       <label class="check"><input type="checkbox" name="isNew" ${p.isNew ? "checked" : ""}> ${esc(t("pr.isNew"))}</label>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button type="button" class="btn" data-close>${esc(t("cancel"))}</button>
         <button class="btn btn-primary">${esc(t("save"))}</button>
       </div>`;
+    /* ---- 360° kadrlar ---- */
+    let pendingFrames = null, clearFrames = false;
+    const spinInfo = () => {
+      const el = $("#spinInfo"), btn = $("#spinClear");
+      const show = n => {
+        el.textContent = n ? t("spin.count", { n }) : t("spin.none");
+        btn.hidden = !n;
+      };
+      if (pendingFrames) return show(pendingFrames.length);
+      if (clearFrames || !id) return show(0);
+      if (window.Frames && Frames.supported) {
+        Frames.info(id).then(i => show(i ? i.count : 0));
+      } else show(0);
+    };
+    spinInfo();
+    $("#spinFiles").addEventListener("change", e => {
+      const files = Array.prototype.slice.call(e.target.files || []);
+      if (!files.length) return;
+      if (files.length < 8) { toast(t("spin.few"), "warn"); return; }
+      files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      pendingFrames = files;
+      clearFrames = false;
+      spinInfo();
+      $("#spinStrip").innerHTML = files.slice(0, 10)
+        .map(f => '<img src="' + URL.createObjectURL(f) + '" alt="">').join("") +
+        (files.length > 10 ? '<span class="muted">+' + (files.length - 10) + "</span>" : "");
+    });
+    $("#spinClear").addEventListener("click", () => {
+      pendingFrames = null; clearFrames = true;
+      $("#spinStrip").innerHTML = "";
+      $("#spinFiles").value = "";
+      spinInfo();
+    });
+    f.__frames = () => ({ pendingFrames, clearFrames });
+
     const preview = () => {
       const tmp = { category: f.category.value, colors: parseColors(f.colors.value), image: editingImage, name: { uz: f.name_uz.value } };
       $("#imgPreview").innerHTML = productVisual(tmp);
@@ -396,11 +443,34 @@
       image: editingImage
     };
     if (!data.sizes.length) data.sizes = [36, 37, 38, 39, 40];
+    const fr = f.__frames ? f.__frames() : {};
+    data.has360 = fr.pendingFrames ? true : fr.clearFrames ? false : !!(old && old.has360);
     if (old) Object.assign(old, data); else list.unshift(data);
-    if (!Store.saveProducts(list)) { toast("Storage full", "err"); return; }
-    closeModal();
-    toast(t("set.saved"));
-    render();
+
+    const finish = () => {
+      if (!Store.saveProducts(list)) { toast("Storage full", "err"); return; }
+      closeModal();
+      toast(t("set.saved"));
+      render();
+    };
+
+    if (fr.clearFrames && window.Frames) Frames.remove(id);
+    if (fr.pendingFrames && window.Frames && Frames.supported) {
+      const btn = f.querySelector("button.btn-primary");
+      btn.disabled = true;
+      Frames.save(id, fr.pendingFrames, (a, b) => { btn.textContent = t("spin.saving", { a, b }); })
+        .then(res => {
+          // Birinchi kadr kartalar uchun kichik rasm bo'ladi
+          const target = list.find(x => x.id === id);
+          if (res.thumb) target.image = res.thumb;
+          target.has360 = true;
+          toast(t("spin.saved"));
+          finish();
+        })
+        .catch(() => { toast("360 xato", "err"); btn.disabled = false; btn.textContent = t("save"); });
+      return;
+    }
+    finish();
   });
 
   /* ---------- Buyurtmalar ---------- */
