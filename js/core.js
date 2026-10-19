@@ -139,12 +139,30 @@
 
   if (!read("seeded", false)) seedDemo();
 
+  /* Loyihadagi tayyor suratlar: 360° to'plamlar va studiya kadrlari */
+  const SPIN_SETS = {
+    p1: { dir: "assets/360/p1", count: 24 },
+    p2: { dir: "assets/360/p2", count: 24 },
+    p3: { dir: "assets/360/p3", count: 24 },
+    p4: { dir: "assets/360/p4", count: 24 }
+  };
+  const PHOTOS = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"]
+    .reduce((m, id) => { m[id] = "assets/products/" + id + ".jpg"; return m; }, {});
+
+  function decorate(list) {
+    return list.map(p => {
+      if (SPIN_SETS[p.id] && !p.spin) p.spin = SPIN_SETS[p.id];
+      if (PHOTOS[p.id] && !p.photo) p.photo = PHOTOS[p.id];
+      return p;
+    });
+  }
+
   /* ---------- Do'kon API ---------- */
   const Store = {
     read, write, seedDemo,
-    products: () => read("products", []),
+    products: () => decorate(read("products", [])),
     saveProducts: list => write("products", list),
-    product: id => read("products", []).find(p => p.id === id),
+    product: id => decorate(read("products", [])).find(p => p.id === id),
     orders: () => read("orders", []),
     saveOrders: list => write("orders", list),
     settings: () => Object.assign({}, DEFAULT_SETTINGS, read("settings", {})),

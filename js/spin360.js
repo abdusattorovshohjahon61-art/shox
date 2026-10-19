@@ -8,7 +8,8 @@ window.Spin360 = (function () {
     if (!host || !blobs || !blobs.length) return null;
     if (host.__spin360) host.__spin360.destroy();   // eskisini to'xtatamiz
     const o = opt || {};
-    const urls = Frames.urls(blobs);
+    const raw = !!o.raw;
+    const urls = raw ? blobs.slice() : Frames.urls(blobs);
     const n = urls.length;
     let idx = 0, dragging = false, lastX = 0, acc = 0, raf = 0, auto = o.auto !== false && !reduce;
 
@@ -37,7 +38,7 @@ window.Spin360 = (function () {
     let t0 = 0;
     function loop(t) {
       // Element sahifadan olib tashlangan bo'lsa — to'xtaymiz (xotira oqmasin)
-      if (!root.isConnected) { cancelAnimationFrame(raf); Frames.free(urls); host.__spin360 = null; return; }
+      if (!root.isConnected) { cancelAnimationFrame(raf); if (!raw) Frames.free(urls); host.__spin360 = null; return; }
       raf = requestAnimationFrame(loop);
       if (!auto || dragging) return;
       if (!t0) t0 = t;
@@ -86,7 +87,7 @@ window.Spin360 = (function () {
         host.__spin360 = null;
         window.removeEventListener("mousemove", move);
         window.removeEventListener("mouseup", up);
-        Frames.free(urls);
+        if (!raw) Frames.free(urls);
         host.innerHTML = "";
       },
       frames: n
@@ -95,12 +96,35 @@ window.Spin360 = (function () {
     return api;
   }
 
-  /* Mahsulotga kadrlar bor bo'lsa — shu yerda o'rnatadi */
-  async function mountFor(host, productId, opt) {
-    if (!window.Frames || !Frames.supported) return null;
-    const blobs = await Frames.get(productId);
-    if (!blobs || !blobs.length) return null;
-    return mount(host, blobs, opt);
+  /* Fayl manzillaridan (assets/360/...) ko'rsatish */
+  function mountUrls(host, urls, opt) {
+    if (!host || !urls || !urls.length) return null;
+    if (host.__spin360) host.__spin360.destroy();
+    const blobsLike = urls.slice();
+    // Bu yerda URL ro'yxati to'g'ridan-to'g'ri ishlatiladi — blob yaratilmaydi
+    return mount(host, blobsLike, Object.assign({ raw: true }, opt || {}));
+  }
+
+  /* Mahsulot uchun eng yaxshi manbani tanlaydi:
+     1) CEO panel orqali yuklangan kadrlar, 2) loyihadagi fayllar */
+  async function mountFor(host, productOrId, opt) {
+    const p = typeof productOrId === "string"
+      ? (window.NS ? NS.Store.product(productOrId) : null)
+      : productOrId;
+    const id = typeof productOrId === "string" ? productOrId : (p && p.id);
+
+    if (window.Frames && Frames.supported && id) {
+      const blobs = await Frames.get(id);
+      if (blobs && blobs.length) return mount(host, blobs, opt);
+    }
+    if (p && p.spin && p.spin.dir && p.spin.count) {
+      const urls = [];
+      for (let i = 0; i < p.spin.count; i++) {
+        urls.push(p.spin.dir + "/" + String(i).padStart(2, "0") + ".jpg");
+      }
+      return mountUrls(host, urls, opt);
+    }
+    return null;
   }
 
   return { mount, mountFor };

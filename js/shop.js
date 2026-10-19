@@ -151,7 +151,7 @@
       <div class="pd">
         <div class="pd-media" style="--accent:${esc(current.color)}">
           <div class="pd-img" id="pdImg">${productVisual3D(p, current.color, "full")}</div>
-          ${p.has360 ? "" : p.image ? "" : `<span class="view3d">${esc(t("product.view3d"))}</span>`}
+          ${(p.has360 || p.spin) ? "" : p.image ? "" : `<span class="view3d">${esc(t("product.view3d"))}</span>`}
         </div>
         <div class="pd-info">
           <span class="card-cat">${esc(t("cat." + p.category))}</span>
@@ -181,8 +181,8 @@
       </div>`;
     mount3D("#productBody");
     // Haqiqiy 360° suratlar bo'lsa — ular 3D shakl o'rnini egallaydi
-    if (p.has360 && window.Spin360) {
-      Spin360.mountFor($("#pdImg"), p.id, { label: t("spin.badge") });
+    if ((p.has360 || p.spin) && window.Spin360) {
+      Spin360.mountFor($("#pdImg"), p, { label: t("spin.badge") });
     }
   }
 
