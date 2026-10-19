@@ -36,18 +36,14 @@
     return { h, s: sat, l };
   }
 
-  /* Mahsulot rangidan fon gradienti.
-     Qora, oq va kulrang mahsulotlar uchun brendning to'q qizil rangi olinadi. */
+  /* Mahsulot rangi fonga juda yengil ohang beradi — tinch, suyak rangli sahna */
   function gradient(hex) {
-    let { h, s } = toHSL(hex || "#b3123b");
-    if (s < 0.16) { h = 345; s = 0.6; }
-    else s = Math.max(0.52, Math.min(0.78, s));
-    const S = Math.round(s * 100);
-    return "radial-gradient(120% 125% at 50% -12%, " +
-      "hsl(" + h.toFixed(0) + " " + S + "% 68%) 0%, " +
-      "hsl(" + h.toFixed(0) + " " + S + "% 50%) 30%, " +
-      "hsl(" + h.toFixed(0) + " " + Math.round(S * .95) + "% 27%) 66%, " +
-      "hsl(" + h.toFixed(0) + " " + Math.round(S * .9) + "% 11%) 100%)";
+    let { h, s } = toHSL(hex || "#a8865f");
+    if (s < 0.16) { h = 32; s = 0.26; }          // qora/oq/kulrang — iliq neytral ohang
+    const dark = document.documentElement.dataset.theme === "dark";
+    const S = Math.round(Math.min(0.44, Math.max(0.16, s)) * 100);
+    const L = dark ? 20 : 90;
+    return "radial-gradient(74% 64% at 50% 44%, hsl(" + h.toFixed(0) + " " + S + "% " + L + "%) 0%, transparent 72%)";
   }
 
   function paintBg(hex) {
@@ -170,6 +166,7 @@
   }
 
   window.addEventListener("lang:change", () => { renderSide(); });
+  new MutationObserver(() => paintBg(color)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   window.addEventListener("storage", e => { if (e.key && e.key.includes("products")) rebuild(); });
 
   rebuild();
