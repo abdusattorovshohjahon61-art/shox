@@ -120,7 +120,9 @@ window.Spin360 = (function () {
     if (p && p.spin && p.spin.dir && p.spin.count) {
       const urls = [];
       for (let i = 0; i < p.spin.count; i++) {
-        urls.push(p.spin.dir + "/" + String(i).padStart(2, "0") + ".jpg");
+        const u = p.spin.dir + "/" + String(i).padStart(2, "0") + ".jpg";
+        // Bitta faylga yig'ilgan versiyada rasmlar hujjat ichida bo'ladi
+        urls.push((window.__ASSET_MAP && window.__ASSET_MAP[u]) || u);
       }
       return mountUrls(host, urls, opt);
     }

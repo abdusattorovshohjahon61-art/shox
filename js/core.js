@@ -147,7 +147,12 @@
     p4: { dir: "assets/360/p4", count: 24 }
   };
   const PHOTOS = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"]
-    .reduce((m, id) => { m[id] = "assets/products/" + id + ".jpg"; return m; }, {});
+    .reduce((m, id) => {
+      const path = "assets/products/" + id + ".jpg";
+      // Bitta faylga yig'ilgan versiyada rasm hujjat ichida bo'ladi
+      m[id] = (window.__ASSET_MAP && window.__ASSET_MAP[path]) || path;
+      return m;
+    }, {});
 
   function decorate(list) {
     return list.map(p => {
