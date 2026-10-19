@@ -141,10 +141,10 @@
 
   /* Loyihadagi tayyor suratlar: 360° to'plamlar va studiya kadrlari */
   const SPIN_SETS = {
-    p1: { dir: "assets/360/p1", count: 24 },
-    p2: { dir: "assets/360/p2", count: 24 },
-    p3: { dir: "assets/360/p3", count: 24 },
-    p4: { dir: "assets/360/p4", count: 24 }
+    p1: { dir: "assets/360/p1", count: 24, ext: "webp" },
+    p2: { dir: "assets/360/p2", count: 24, ext: "webp" },
+    p3: { dir: "assets/360/p3", count: 24, ext: "webp" },
+    p4: { dir: "assets/360/p4", count: 24, ext: "webp" }
   };
   const PHOTOS = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"]
     .reduce((m, id) => {
