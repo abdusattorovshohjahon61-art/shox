@@ -265,13 +265,14 @@ window.Shoe3D = (function () {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    const idle = canvas.dataset.idle !== "0" && !interactive && !reduce;
+    const noSpin = canvas.dataset.spin === "0";
+    const idle = canvas.dataset.idle !== "0" && !reduce && (!interactive || noSpin);
     const st = {
       base: -0.17,
       angle: interactive ? -0.22 : -0.17,
       tilt: 0.17,
       color: canvas.dataset.color || "#b3123b",
-      spin: interactive && !reduce,
+      spin: interactive && !reduce && !noSpin,
       hover: false,
       dragging: false,
       raf: 0,

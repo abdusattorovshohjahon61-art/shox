@@ -121,6 +121,17 @@
   /* ---------- Mahsulot oynasi ---------- */
   let current = null;
   let lastOrderId = null;
+  /* Vitrinadagi "Xarid qilish" — mahsulot oynasini tanlovlar bilan ochadi */
+  window.addEventListener("showcase:open", e => {
+    const { id, color, size } = e.detail || {};
+    const p = Store.product(id);
+    if (!p) return;
+    Store.track(id, "views");
+    current = { id, size: p.sizes.includes(size) ? size : null, color: color || p.colors[0], qty: 1 };
+    renderProduct();
+    openModal("#productModal");
+  });
+
   function openProduct(id) {
     const p = Store.product(id);
     if (!p) return;

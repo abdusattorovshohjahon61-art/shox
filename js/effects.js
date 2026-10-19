@@ -38,21 +38,6 @@
     });
   });
 
-  /* Fon video: ko'rinmaganda to'xtab turadi (batareya va protsessor uchun) */
-  function bgVideo() {
-    const v = document.getElementById('bgVideo');
-    if (!v) return;
-    if (reduce) { v.removeAttribute('autoplay'); v.pause(); return; }
-    const play = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
-    play();
-    document.addEventListener('click', play, { once: true });
-    const hero = document.querySelector('.hero');
-    if (hero && 'IntersectionObserver' in window) {
-      new IntersectionObserver(([e]) => { e.isIntersecting ? play() : v.pause(); },
-        { threshold: 0.02 }).observe(hero);
-    }
-  }
-
   /* Scroll paytida paydo bo'lish */
   let io;
   function reveal() {
@@ -114,11 +99,14 @@
   function header() {
     const h = document.querySelector(".header");
     if (!h) return;
-    const hero = document.querySelector(".hero");
+    const setH = () => document.documentElement.style.setProperty("--header-h", h.offsetHeight + "px");
+    setH();
+    window.addEventListener("resize", setH);
+    const hero = document.querySelector(".showcase");
     const on = () => {
       h.classList.toggle("scrolled", scrollY > 30);
       // Hero (video) ustida turganda — shaffof va oq matnli header
-      if (hero) h.classList.toggle("over-video", scrollY < hero.offsetHeight - 90);
+      if (hero) h.classList.toggle("over-hero", scrollY < hero.offsetHeight - 90);
     };
     window.addEventListener("scroll", on, { passive: true }); on();
   }
@@ -185,7 +173,7 @@
 
   function refresh() { reveal(); tilt(); }
 
-  function boot() { heroText(); bgVideo(); counters(); header(); magnetic(); cursorGlow(); refresh(); }
+  function boot() { heroText(); counters(); header(); magnetic(); cursorGlow(); refresh(); }
   document.addEventListener("DOMContentLoaded", boot);
   if (document.readyState !== "loading") boot();
 
