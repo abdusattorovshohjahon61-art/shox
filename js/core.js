@@ -140,12 +140,9 @@
   if (!read("seeded", false)) seedDemo();
 
   /* Loyihadagi tayyor suratlar: 360° to'plamlar va studiya kadrlari */
-  const SPIN_SETS = {
-    p1: { dir: "assets/360/p1", count: 24, ext: "webp" },
-    p2: { dir: "assets/360/p2", count: 24, ext: "webp" },
-    p3: { dir: "assets/360/p3", count: 24, ext: "webp" },
-    p4: { dir: "assets/360/p4", count: 24, ext: "webp" }
-  };
+  /* Tayyor 360° to'plamlari. CEO panelidan kadr yuklangan mahsulotlar
+     baribir 360° da ko'rinadi — u IndexedDB orqali ishlaydi. */
+  const SPIN_SETS = {};
   const PHOTOS = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"]
     .reduce((m, id) => {
       const path = "assets/products/" + id + ".jpg";
@@ -158,6 +155,7 @@
     return list.map(p => {
       if (SPIN_SETS[p.id] && !p.spin) p.spin = SPIN_SETS[p.id];
       if (PHOTOS[p.id] && !p.photo) p.photo = PHOTOS[p.id];
+      if (PHOTOS[p.id] && !p.image) p.image = PHOTOS[p.id];
       return p;
     });
   }

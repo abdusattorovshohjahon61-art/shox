@@ -267,6 +267,7 @@ html.intro-done .showcase .sc-panel { animation: panelIn .9s cubic-bezier(.22, 1
 .lb-card:hover { opacity: .78; }
 .lb-shoe { position: relative; width: 100%; aspect-ratio: 1 / .9; display: grid; place-items: center; background: var(--surface); margin-bottom: 18px; }
 .lb-shoe canvas, .lb-shoe svg { width: 82%; }
+.lb-shoe img { width: 100%; height: 100%; object-fit: cover; }
 .lb-shoe canvas, .lb-shoe svg { filter: drop-shadow(0 24px 24px rgba(0, 0, 0, .5)); }
 .lb-cat { font-size: 9.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted); }
 .lb-card h3 { font-size: 14.5px; font-weight: 500; margin: 8px 0 10px; }
@@ -392,9 +393,14 @@ html.intro-done .showcase .sc-panel { animation: panelIn .9s cubic-bezier(.22, 1
   transition: opacity .8s cubic-bezier(.22, 1, .36, 1), transform .8s cubic-bezier(.22, 1, .36, 1);
 }
 .sc-stage.in { opacity: 1; transform: none; }
-.sc-stage canvas, .sc-stage img {
+.sc-stage canvas {
   width: 100%; max-width: 580px; height: auto;
   filter: drop-shadow(0 34px 34px rgba(60, 48, 32, .2));
+}
+.sc-stage img {
+  width: 100%; max-width: 620px; height: auto;
+  -webkit-mask-image: radial-gradient(66% 66% at 50% 50%, #000 46%, transparent 100%);
+  mask-image: radial-gradient(66% 66% at 50% 50%, #000 46%, transparent 100%);
 }
 .sc-stage canvas { cursor: grab; }
 .sc-stage canvas.grabbing { cursor: grabbing; }
@@ -515,7 +521,8 @@ html.intro-done .showcase .sc-panel { animation: panelIn .9s cubic-bezier(.22, 1
 }
 .card:hover .card-media::after { opacity: 1; }
 .card-img { width: 78%; transition: transform .6s cubic-bezier(.2, .8, .2, 1); }
-.card-img img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1; border-radius: 12px; }
+.card-img:has(img) { width: 100%; height: 100%; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: auto; border-radius: 0; }
 .shoe-svg { stroke: none; }
 canvas.shoe3d { width: 100%; height: 100%; display: block; }
 .card-img canvas.shoe3d { aspect-ratio: 200 / 170; height: auto; }
@@ -532,7 +539,7 @@ canvas.shoe3d { width: 100%; height: 100%; display: block; }
 .card-img .shoe-svg, .pd-img .shoe-svg, .line-img .shoe-svg { width: 100%; height: auto; }
 .card:hover .card-img { transform: scale(1.05) translateY(-6px); }
 .card-tags { position: absolute; top: 10px; left: 2px; display: flex; gap: 12px; z-index: 1; }
-.tag { padding: 0; border-radius: 0; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
+.tag { padding: 3px 8px; background: var(--bg); border-radius: 0; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
 .tag-new { background: none; color: var(--text); }
 .tag-sale { background: none; color: var(--accent); }
 .fav-btn { position: absolute; top: 6px; right: 2px; z-index: 3; width: 34px; height: 34px; border-radius: 0; background: none; backdrop-filter: none; color: var(--muted); display: grid; place-items: center; transition: color .3s; }
@@ -605,7 +612,11 @@ canvas.shoe3d { width: 100%; height: 100%; display: block; }
 .pd { display: grid; grid-template-columns: 1fr 1fr; }
 .pd-media { background: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--accent) 35%, var(--surface2)), var(--surface2) 70%); display: grid; place-items: center; padding: 40px; min-height: 380px; transition: background .4s; }
 .pd-img { width: 100%; animation: float 5s ease-in-out infinite; }
-.pd-img img { border-radius: 16px; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.pd-img img { border-radius: 0; width: 100%; aspect-ratio: 1; object-fit: cover; }
+/* Haqiqiy surat bo'lsa — maydonni to'liq egallaydi, fon va tebranish kerak emas */
+.pd-media:has(.pd-img img) { padding: 0; background: var(--surface); }
+.pd-img:has(img) { animation: none; height: 100%; }
+.pd-img:has(img) img { height: 100%; aspect-ratio: auto; }
 .pd-info { padding: 34px; }
 .pd-info h2 { font-size: 30px; margin: 6px 0 0; }
 .pd-group { margin: 18px 0; display: flex; flex-direction: column; gap: 8px; }
