@@ -538,6 +538,8 @@
           <label class="field">${esc(t("set.cardHolder"))}<input name="cardHolder" value="${esc(s.cardHolder || "")}" placeholder="NILUFAR SHOES"></label>
           <label class="field">${esc(t("set.clickLink"))}<input name="clickLink" value="${esc(s.clickLink || "")}" placeholder="https://my.click.uz/..."></label>
           <label class="field">${esc(t("set.paymeLink"))}<input name="paymeLink" value="${esc(s.paymeLink || "")}" placeholder="https://payme.uz/..."></label>
+          <label class="field">${esc(t("set.telegram"))}<input name="telegram" value="${esc(s.telegram || "")}" placeholder="nilufar_shoes"></label>
+          <p class="muted" style="font-size:12.5px;margin:0">${esc(t("set.tgHint"))}</p>
           <button class="btn btn-primary">${esc(t("save"))}</button>
         </form>
         <div class="panel form">
@@ -564,7 +566,8 @@
         cardNumber: f.cardNumber.value.trim(),
         cardHolder: f.cardHolder.value.trim(),
         clickLink: f.clickLink.value.trim(),
-        paymeLink: f.paymeLink.value.trim()
+        paymeLink: f.paymeLink.value.trim(),
+        telegram: f.telegram.value.trim().replace(/^@/, "")
       }));
       toast(t("set.saved"));
     });

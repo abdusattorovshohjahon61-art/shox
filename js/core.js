@@ -10,7 +10,8 @@
     cardNumber: "8600 1234 5678 9012",
     cardHolder: "NILUFAR SHOES",
     clickLink: "",
-    paymeLink: ""
+    paymeLink: "",
+    telegram: "nilufar_shoes"
   };
 
   /* ---------- Saqlash ---------- */

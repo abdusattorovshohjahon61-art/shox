@@ -63,6 +63,7 @@ h2 { font-family: "Playfair Display", Georgia, serif; font-size: clamp(28px, 4vw
 .muted { color: var(--muted); }
 .warn { color: var(--warn); font-weight: 600; }
 .container { width: min(1200px, 100% - 32px); margin-inline: auto; }
+section[id], .lookbook { scroll-margin-top: 86px; }
 [hidden] { display: none !important; }
 
 /* ---------- Kursor nuri ---------- */
@@ -160,6 +161,104 @@ h2 { font-family: "Playfair Display", Georgia, serif; font-size: clamp(28px, 4vw
 .chip.toggle.active svg { fill: currentColor; }
 .chip.shine { position: relative; overflow: hidden; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); font-weight: 600; }
 .chip.shine::after { content: ""; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent); animation: shine 3s infinite; }
+
+/* ---------- Ochilish taqdimoti ---------- */
+.intro {
+  position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+  background: #0b0809; overflow: hidden; cursor: pointer;
+}
+.intro.out { animation: introOut .8s cubic-bezier(.7, 0, .2, 1) both; }
+@keyframes introOut { to { opacity: 0; visibility: hidden; } }
+.intro-curtain {
+  position: absolute; top: 0; bottom: 0; width: 51%; background: #0b0809; z-index: 2;
+  transition: transform .85s cubic-bezier(.7, 0, .2, 1);
+}
+.intro-curtain.l { left: 0; }
+.intro-curtain.r { right: 0; }
+.intro.out .intro-curtain.l { transform: translateX(-102%); }
+.intro.out .intro-curtain.r { transform: translateX(102%); }
+.intro-inner { position: relative; z-index: 3; display: grid; place-items: center; text-align: center; }
+.intro.out .intro-inner { animation: introFade .4s both; }
+@keyframes introFade { to { opacity: 0; transform: scale(1.06); } }
+.intro-logo {
+  width: 136px; height: 136px; border-radius: 50%; background: #fff; display: grid; place-items: center;
+  box-shadow: 0 24px 70px rgba(255, 77, 125, .4);
+  animation: introPop .9s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.intro-logo img { width: 74%; }
+@keyframes introPop { from { opacity: 0; transform: scale(.4) rotate(-18deg); } }
+.intro-name { margin-top: 20px; color: #fff; line-height: 1; }
+.intro-name b {
+  display: block; font-family: "Great Vibes", cursive; font-weight: 400; font-size: 46px;
+  animation: introUp .8s .25s both;
+}
+.intro-name span {
+  display: block; margin-top: 6px; font-size: 11px; letter-spacing: .52em;
+  color: rgba(255, 255, 255, .55); animation: introUp .8s .4s both;
+}
+@keyframes introUp { from { opacity: 0; transform: translateY(18px); } }
+.intro-bar {
+  width: 148px; height: 2px; margin-top: 26px; border-radius: 2px;
+  background: rgba(255, 255, 255, .16); overflow: hidden; animation: introUp .6s .5s both;
+}
+.intro-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff4d7d, #e8c46a); animation: introBar 1.5s .45s cubic-bezier(.4, 0, .2, 1) both; }
+@keyframes introBar { to { width: 100%; } }
+html.intro-on body { overflow: hidden; }
+/* Taqdimot tugagach sahifa yumshoq paydo bo'ladi */
+html.intro-done .showcase .sc-panel { animation: panelIn .9s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(34px) scale(.985); } }
+
+/* ---------- Scroll ko'rsatkichi ---------- */
+.scroll-bar {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 60;
+  background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width .1s linear;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* ---------- Lukbuk (gorizontal lenta) ---------- */
+.lookbook { padding: 18px 0 70px; }
+.lb-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.lb-head h2 { margin: 0; }
+.lb-head span { font-size: 13px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+.lb-rail {
+  display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 66px 0 26px; scrollbar-width: none; -ms-overflow-style: none;
+}
+.lb-rail::-webkit-scrollbar { display: none; }
+.lb-card {
+  scroll-snap-align: center; flex: 0 0 min(300px, 76vw); position: relative; cursor: pointer;
+  border-radius: 26px; padding: 142px 22px 22px; color: #fff; isolation: isolate;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--c) 70%, #140c10), color-mix(in srgb, var(--c) 24%, #140c10));
+  box-shadow: 0 26px 54px rgba(20, 8, 14, .34);
+  transition: transform .45s cubic-bezier(.2, .8, .2, 1), box-shadow .45s;
+}
+.lb-card:hover { transform: translateY(-10px); box-shadow: 0 40px 70px rgba(20, 8, 14, .46); }
+.lb-shoe { position: absolute; left: 50%; top: -58px; translate: -50% 0; width: 80%; aspect-ratio: 1 / .78; z-index: -1; }
+.lb-shoe canvas, .lb-shoe svg { filter: drop-shadow(0 24px 24px rgba(0, 0, 0, .5)); }
+.lb-cat { font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; opacity: .72; }
+.lb-card h3 { font-size: 18px; margin: 6px 0 12px; }
+.lb-price { font-size: 21px; font-weight: 800; padding-right: 54px; }
+.lb-price s { white-space: nowrap; }
+.lb-price s { font-size: 13px; opacity: .6; margin-left: 8px; font-weight: 500; }
+.lb-badge {
+  position: absolute; top: 16px; right: 16px; z-index: 2; background: rgba(255, 255, 255, .92); color: #15111a;
+  font-size: 11px; font-weight: 800; padding: 5px 11px; border-radius: 999px;
+}
+.lb-go {
+  position: absolute; right: 18px; bottom: 18px; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .3); color: #fff;
+  display: grid; place-items: center; transition: .3s;
+}
+.lb-card:hover .lb-go { background: #fff; color: #15111a; }
+
+/* ---------- Telegram tugmasi ---------- */
+.btn-tg {
+  background: linear-gradient(135deg, #2aabee, #229ed9); color: #fff;
+  box-shadow: 0 12px 28px rgba(34, 158, 217, .35); margin-bottom: 8px;
+}
+.btn-tg:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(34, 158, 217, .45); }
+.btn-tg svg { width: 18px; height: 18px; }
+.tg-hint { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; line-height: 1.5; }
 
 /* ---------- Vitrina (bosh ekran) ---------- */
 .showcase {

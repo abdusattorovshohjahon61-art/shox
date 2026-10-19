@@ -358,6 +358,33 @@
     openModal("#checkoutModal");
   }
 
+  /* Buyurtma matnini Telegram uchun tayyorlaymiz */
+  function telegramLink(order) {
+    const st = Store.settings();
+    const user = String(st.telegram || "").replace(/^@/, "").trim();
+    if (!user) return "";
+    const items = order.items.map(it => {
+      const p = Store.product(it.id);
+      return "• " + (p ? pname(p) : it.id) + " — " + it.size + " — " + it.qty + " dona — " + money(it.price * it.qty);
+    }).join("\n");
+    const txt = [
+      "🛍 " + t("tg.order") + " #" + order.id,
+      "",
+      "👤 " + t("tg.customer") + ": " + order.name,
+      "📞 " + order.phone + (order.phone2 ? " / " + order.phone2 : ""),
+      "📍 " + t("tg.address") + ": " + NS.regionName(order.region) + ", " + order.district + ", " + order.address +
+        (order.landmark ? " (" + order.landmark + ")" : ""),
+      "",
+      "👟 " + t("tg.items") + ":",
+      items,
+      "",
+      "💳 " + t("tg.payment") + ": " + t("pay." + order.payment),
+      "💰 " + t("tg.total") + ": " + money(order.total),
+      order.note ? "\n💬 " + order.note : ""
+    ].join("\n");
+    return "https://t.me/" + encodeURIComponent(user) + "?text=" + encodeURIComponent(txt);
+  }
+
   function submitOrder(e) {
     e.preventDefault();
     const f = e.target;
@@ -392,8 +419,15 @@
     closeAll();
     $("#successText").textContent = t("checkout.successText", { id, phone: data.phone });
     lastOrderId = id;
-    $("#successPay").innerHTML = data.payment === "cash" ? "" :
-      `<h4>${esc(t("pay.afterOrder"))}</h4>` + paymentBlock(data.payment, tt.total, id);
+    const order = orders[0];
+    const tg = telegramLink(order);
+    $("#successPay").innerHTML =
+      (tg ? `<a class="btn btn-tg btn-block" href="${esc(tg)}" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/></svg>
+              ${esc(t("tg.send"))}</a>
+            <p class="tg-hint">${esc(t("tg.hint"))}</p>` : "") +
+      (data.payment === "cash" ? "" :
+        `<h4>${esc(t("pay.afterOrder"))}</h4>` + paymentBlock(data.payment, tt.total, id));
     openModal("#successModal");
     if (window.FX) FX.confetti();
   }
