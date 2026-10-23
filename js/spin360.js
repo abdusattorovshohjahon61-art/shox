@@ -126,6 +126,8 @@ window.Spin360 = (function () {
       }
       return mountUrls(host, urls, opt);
     }
+    /* Kadrlar yo'q, lekin oddiy surat bor — uni avtomat aylantiramiz */
+    if (p && p.image && window.Auto3D) return Auto3D.mount(host, p.image, opt);
     return null;
   }
 

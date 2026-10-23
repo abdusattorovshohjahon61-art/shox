@@ -287,6 +287,13 @@ html.intro-done .showcase .sc-panel { animation: panelIn .9s cubic-bezier(.22, 1
 .sc-stage:has(.spin360) { min-height: 0; }
 .sc-stage .spin360 { max-width: 560px; }
 .spin-stage img { filter: drop-shadow(0 18px 20px rgba(60, 48, 32, .14)); }
+/* Bitta suratdan avtomat 3D aylanish */
+.auto3d { position: relative; width: 100%; user-select: none; -webkit-user-select: none; touch-action: pan-y; cursor: grab; }
+.auto3d.grabbing { cursor: grabbing; }
+.auto3d-cv { display: block; width: 100%; height: auto; }
+.sc-stage .auto3d { max-width: 620px; }
+.pd-media:has(.auto3d) { padding: 24px; background: var(--surface); }
+
 .spin360 { position: relative; width: 100%; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
 .spin-stage { position: relative; width: 100%; aspect-ratio: 1 / .92; }
 .spin-stage img {

@@ -180,8 +180,8 @@
         </div>
       </div>`;
     mount3D("#productBody");
-    // Haqiqiy 360° suratlar bo'lsa — ular 3D shakl o'rnini egallaydi
-    if ((p.has360 || p.spin) && window.Spin360) {
+    /* Kadrlar bo'lsa — haqiqiy 360°, bo'lmasa bitta suratdan avtomat 3D */
+    if (window.Spin360) {
       Spin360.mountFor($("#pdImg"), p, { label: t("spin.badge") });
     }
   }
