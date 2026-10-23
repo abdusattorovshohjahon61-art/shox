@@ -140,9 +140,22 @@
   if (!read("seeded", false)) seedDemo();
 
   /* Loyihadagi tayyor suratlar: 360° to'plamlar va studiya kadrlari */
-  /* Tayyor 360° to'plamlari. CEO panelidan kadr yuklangan mahsulotlar
-     baribir 360° da ko'rinadi — u IndexedDB orqali ishlaydi. */
-  const SPIN_SETS = {};
+  /* Tayyor 360° to'plamlari — mahsulot to'liq aylanadi.
+     CEO panelidan kadr yuklansa, o'sha kadrlar ustun turadi. */
+  const SPIN_SETS = {
+    p1: { dir: "assets/360/p1", count: 24, ext: "webp" },
+    p2: { dir: "assets/360/p2", count: 24, ext: "webp" },
+    p3: { dir: "assets/360/p3", count: 24, ext: "webp" },
+    p4: { dir: "assets/360/p4", count: 24, ext: "webp" },
+    p5: { dir: "assets/360/p5", count: 24, ext: "webp" },
+    p6: { dir: "assets/360/p6", count: 24, ext: "webp" },
+    p7: { dir: "assets/360/p7", count: 24, ext: "webp" },
+    p8: { dir: "assets/360/p8", count: 24, ext: "webp" },
+    p9: { dir: "assets/360/p9", count: 24, ext: "webp" },
+    p10: { dir: "assets/360/p10", count: 24, ext: "webp" },
+    p11: { dir: "assets/360/p11", count: 24, ext: "webp" },
+    p12: { dir: "assets/360/p12", count: 24, ext: "webp" }
+  };
   const PHOTOS = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12"]
     .reduce((m, id) => {
       const path = "assets/products/" + id + ".jpg";
