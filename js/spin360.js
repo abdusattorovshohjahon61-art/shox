@@ -13,8 +13,12 @@ window.Spin360 = (function () {
     const n = urls.length;
     let idx = 0, dragging = false, lastX = 0, acc = 0, raf = 0, auto = o.auto !== false && !reduce;
 
+    /* Kadr kam bo'lsa — ular bir-biriga yumshoq o'tsin va sekinroq almashsin */
+    const few = n < 10;
+    const step = Math.max(90, Math.round(1800 / n));
+
     host.innerHTML =
-      '<div class="spin360">' +
+      '<div class="spin360' + (few ? " few" : "") + '">' +
         '<div class="spin-stage">' +
           urls.map((u, i) => '<img src="' + u + '" alt="" draggable="false"' +
             (i === 0 ? ' class="on"' : "") + (i < 3 ? "" : ' loading="lazy"') + ">").join("") +
@@ -42,7 +46,7 @@ window.Spin360 = (function () {
       raf = requestAnimationFrame(loop);
       if (!auto || dragging) return;
       if (!t0) t0 = t;
-      if (t - t0 > 90) { t0 = t; show(idx + 1); }
+      if (t - t0 > step) { t0 = t; show(idx + 1); }
     }
     function stopAuto() { auto = false; root.classList.add("touched"); }
 
@@ -56,10 +60,10 @@ window.Spin360 = (function () {
       const x = px(e);
       acc += x - lastX;
       lastX = x;
-      const step = Math.max(6, root.clientWidth / n / 1.4);   // bir kadrga necha piksel
-      while (Math.abs(acc) >= step) {
+      const px2 = Math.max(6, root.clientWidth / n / 1.4);    // bir kadrga necha piksel
+      while (Math.abs(acc) >= px2) {
         show(idx + (acc > 0 ? 1 : -1));
-        acc += acc > 0 ? -step : step;
+        acc += acc > 0 ? -px2 : px2;
       }
       if (e.cancelable) e.preventDefault();
     }

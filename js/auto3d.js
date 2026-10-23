@@ -153,6 +153,21 @@ window.Auto3D = (function () {
       ctx.clearRect(0, 0, w, h);
 
       const cos = Math.cos(angle), sin = Math.sin(angle);
+
+      /* Yerdagi soya — aylanganda torayadi, shuning uchun harakat seziladi */
+      const sw = w * 0.34 * (0.45 + 0.55 * Math.abs(cos));
+      const sg = ctx.createRadialGradient(w / 2, h * 0.93, 1, w / 2, h * 0.93, sw);
+      sg.addColorStop(0, "rgba(40,32,22,.26)");
+      sg.addColorStop(0.6, "rgba(40,32,22,.09)");
+      sg.addColorStop(1, "rgba(40,32,22,0)");
+      ctx.save();
+      ctx.translate(w / 2, h * 0.93);
+      ctx.scale(1, 0.17);
+      ctx.translate(-w / 2, -h * 0.93);
+      ctx.fillStyle = sg;
+      ctx.fillRect(0, h * 0.93 - sw, w, sw * 2);
+      ctx.restore();
+
       const back = cos < 0;                      // orqa tomoni ko'rinyapti
       const cx = w / 2, cy = h / 2;
       const d = w * DEPTH;

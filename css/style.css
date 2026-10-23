@@ -301,6 +301,8 @@ html.intro-done .showcase .sc-panel { animation: panelIn .9s cubic-bezier(.22, 1
   opacity: 0; pointer-events: none;
 }
 .spin-stage img.on { opacity: 1; }
+/* Kadr kam bo'lsa — yumshoq o'tish aylanishni silliq ko'rsatadi */
+.spin360.few .spin-stage img { transition: opacity .22s linear; }
 .spin360 { cursor: grab; }
 .spin360.grabbing { cursor: grabbing; }
 .spin-hint {

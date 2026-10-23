@@ -365,7 +365,7 @@
     $("#spinFiles").addEventListener("change", e => {
       const files = Array.prototype.slice.call(e.target.files || []);
       if (!files.length) return;
-      if (files.length < 8) { toast(t("spin.few"), "warn"); return; }
+      if (files.length < 2) { toast(t("spin.few"), "warn"); return; }
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
       pendingFrames = files;
       clearFrames = false;

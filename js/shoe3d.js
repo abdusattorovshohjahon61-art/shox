@@ -80,7 +80,14 @@ window.Shoe3D = (function () {
   const modelCache = new Map();
 
   /* Bitta siluetdan hajmli qism yasaymiz */
-  function makeMesh(d, quality, depth, dark) {
+  /* Kenglik profillari: taglik deyarli tekis, ust qismi dumaloq */
+  const PROFILE = {
+    main: u => Math.pow(1 - 0.80 * Math.pow(Math.abs(u), 2.6), 0.44),
+    dark: u => Math.pow(1 - 0.84 * Math.pow(Math.abs(u), 2.8), 0.42),
+    sole: u => 1 - 0.34 * Math.pow(Math.abs(u), 5)
+  };
+
+  function makeMesh(d, quality, depth, dark, kind) {
     const outline = samplePath(d, quality);
     if (outline.length < 3) return null;
     const normals = [];
@@ -97,13 +104,22 @@ window.Shoe3D = (function () {
       sx += a[0];
       if (a[1] > maxY) maxY = a[1];
     }
-    const SL = 9, slices = [];
+    /* Haqiqiy poyabzalda kesim tepaga qarab torayadi: shuni har bir
+       nuqtaga balandligiga qarab kenglik koeffitsienti sifatida beramiz. */
+    let minYp = 1e9, maxYp = -1e9;
+    for (const q of outline) { if (q[1] < minYp) minYp = q[1]; if (q[1] > maxYp) maxYp = q[1]; }
+    const span = (maxYp - minYp) || 1;
+    const narrow = kind === "sole" ? 0.12 : 0.42;
+    for (const q of outline) q[2] = 1 - narrow * Math.pow(1 - (q[1] - minYp) / span, 1.5);
+
+    const prof = PROFILE[kind] || PROFILE.main;
+    const SL = kind === "sole" ? 7 : 11, slices = [];
     for (let i = 0; i < SL; i++) {
       const u = -1 + (2 * i) / (SL - 1);
-      slices.push({ z: u * (depth / 2), s: Math.pow(1 - 0.86 * Math.pow(Math.abs(u), 2.8), 0.42) });
+      slices.push({ z: u * (depth / 2), s: prof(u) });
     }
     return {
-      outline, normals, slices, dark,
+      outline, normals, slices, dark, kind,
       flip: area > 0 ? 1 : -1,
       center: [sx / outline.length, maxY]
     };
@@ -119,10 +135,14 @@ window.Shoe3D = (function () {
     parts.forEach((p, i) => {
       if (!p.fill || p.fill === "none") { if (p.stroke) strokes.push(p); return; }
       const dark = i > 0 && p.fill === "D";   // birinchi qism — har doim asosiy tana
-      // Tafsilot qismlari biroz ingichkaroq, asosiy tana to'liq kenglikda
-      const dep = i === 0 ? depth : depth * (dark ? 0.82 : 0.9);
+      /* Pastda yotgan to'q qism — taglik. U ustki qismdan kengroq va tekisroq,
+         shuning uchun poyabzal pastdan qaralganda tovoni ko'rinadi. */
+      const pts = samplePath(p.d, 40);
+      const avgY = pts.length ? pts.reduce((t, q) => t + q[1], 0) / pts.length : 0;
+      const kind = i === 0 ? "main" : (dark && avgY > 16) ? "sole" : dark ? "dark" : "main";
+      const dep = kind === "sole" ? depth * 1.08 : i === 0 ? depth : depth * 0.88;
       const q = i === 0 ? quality : Math.max(34, Math.round(quality * 0.45));
-      const m = makeMesh(p.d, q, dep, dark);
+      const m = makeMesh(p.d, q, dep, dark, kind);
       if (m) meshes.push(m);
     });
     const model = { meshes, strokes, depth, category };
@@ -155,6 +175,9 @@ window.Shoe3D = (function () {
     }
 
     const rgb = hex2rgb(color);
+    // Taglik rezinasi — mahsulot rangidan ancha to'q va neytral
+    const sole = [Math.round(rgb[0] * 0.3 + 34), Math.round(rgb[1] * 0.28 + 31), Math.round(rgb[2] * 0.26 + 29)];
+    const RIM = norm3([0.62, 0.3, -0.72]);        // orqadan yoritish — qirralar yonsin
     const F = rotN(0, 0, 1);
     const frontVisible = F[2] > 0;
     const faces = [];
@@ -163,8 +186,13 @@ window.Shoe3D = (function () {
       const cen = mesh.center;
       const n = mesh.outline.length;
       const SL = mesh.slices;
-      const shadeK = mesh.dark ? 0.62 : 1;      // tafsilot qismlari to'qroq
-      const at = (p, sl) => proj(cen[0] + (p[0] - cen[0]) * sl.s, cen[1] + (p[1] - cen[1]) * sl.s, sl.z);
+      const isSole = mesh.kind === "sole";
+      const base = isSole ? sole : rgb;
+      const shadeK = isSole ? 1 : mesh.dark ? 0.62 : 1;   // tafsilot qismlari to'qroq
+      const at = (p, sl) => {
+        const f = sl.s * (p[2] || 1);     // kesim kengligi × nuqtaning kengligi
+        return proj(cen[0] + (p[0] - cen[0]) * sl.s, cen[1] + (p[1] - cen[1]) * sl.s, sl.z * f);
+      };
 
       for (let j = 0; j < SL.length - 1; j++) {
         const s1 = SL[j], s2 = SL[j + 1];
@@ -178,11 +206,17 @@ window.Shoe3D = (function () {
           const N = rotN(nx / ln, ny / ln, nz / ln);
           if (N[2] <= 0.015) continue;
           const lam = Math.max(0, N[0] * LIGHT[0] + N[1] * LIGHT[1] + N[2] * LIGHT[2]);
-          const spec = Math.pow(Math.max(0, N[2]), 7) * 0.18;
+          // Yarqiroq nuqta (Blinn) — charm yaltirasin; taglik rezinasi xira
+          const HL = norm3([LIGHT[0], LIGHT[1], LIGHT[2] + 1]);
+          const spec = isSole ? 0
+            : Math.pow(Math.max(0, N[0] * HL[0] + N[1] * HL[1] + N[2] * HL[2]), 26) * 0.9;
+          const rim = Math.pow(Math.max(0, N[0] * RIM[0] + N[1] * RIM[1] + N[2] * RIM[2]), 2.4) * 0.3;
+          // Pastga qarab qorong'ilashish — poyabzal yerga tegib turgandek
+          const ao = 1 - Math.max(0, Math.min(0.3, ((a[1] + b[1]) / 2 + 10) / 160));
           faces.push({
             z: (p1[2] + p2[2] + p3[2] + p4[2]) / 4,
             pts: [p1, p2, p3, p4],
-            fill: tone(rgb, (0.40 + 0.74 * lam + spec) * shadeK, 0)
+            fill: tone(base, (0.5 + 0.62 * lam) * shadeK * ao, (spec * 150 + rim * 90) * shadeK * ao)
           });
         }
       }
@@ -194,7 +228,7 @@ window.Shoe3D = (function () {
       faces.push({
         z: cap.reduce((s, p) => s + p[2], 0) / n + (frontVisible ? 0.6 : -0.6),
         pts: cap,
-        fill: tone(rgb, (0.62 + 0.62 * lamF) * shadeK, 0),
+        fill: tone(base, (0.66 + 0.5 * lamF) * shadeK, 24 * lamF * shadeK),
         cap: !mesh.dark, slice: capSlice, cen, lamF
       });
     }
@@ -271,6 +305,9 @@ window.Shoe3D = (function () {
       base: -0.17,
       angle: interactive ? -0.22 : -0.17,
       tilt: 0.17,
+      tiltBase: 0.17,
+      tiltFree: false,          // foydalanuvchi o'zi burganmi
+      sweep: interactive && !reduce && !noSpin,   // kamera yuqoridan pastga suriladi
       color: canvas.dataset.color || "#b3123b",
       spin: interactive && !reduce && !noSpin,
       hover: false,
@@ -311,6 +348,9 @@ window.Shoe3D = (function () {
       if (!st.visible) return;
       if (st.dragging) return;
       st.clock += dt;
+      /* Kamera sekin yuqoridan pastga suriladi: poyabzal ham ustidan,
+         ham tagidan (tovoni bilan) ko'rinadi. */
+      if (st.sweep && !st.tiltFree) st.tilt = 0.06 + 0.34 * Math.sin(st.clock * 0.42);
       if (st.spin) {                       // mahsulot oynasi: to'liq aylanish
         st.angle += dt * 0.55;
         render();
@@ -353,16 +393,20 @@ window.Shoe3D = (function () {
 
     if (interactive) {
       canvas.style.touchAction = "pan-y";
-      let px = 0;
+      let px = 0, py = 0;
       const down = e => {
-        st.dragging = true; px = (e.touches ? e.touches[0] : e).clientX;
+        const t = e.touches ? e.touches[0] : e;
+        st.dragging = true; px = t.clientX; py = t.clientY;
         canvas.classList.add("grabbing");
       };
       const move = e => {
         if (!st.dragging) return;
-        const x = (e.touches ? e.touches[0] : e).clientX;
-        st.angle += (x - px) * 0.012;
-        px = x;
+        const t = e.touches ? e.touches[0] : e;
+        st.angle += (t.clientX - px) * 0.012;
+        // Tepaga-pastga surish kamerani ko'taradi/tushiradi — tovonni ko'rish uchun
+        st.tiltFree = true;
+        st.tilt = Math.max(-0.78, Math.min(0.78, st.tilt + (t.clientY - py) * 0.008));
+        px = t.clientX; py = t.clientY;
         render();
         if (e.cancelable) e.preventDefault();
       };
