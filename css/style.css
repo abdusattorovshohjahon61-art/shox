@@ -954,3 +954,17 @@ tbody tr:hover { background: var(--surface2); }
 .track-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .track-top b { font-family: "Cormorant Garamond", Georgia, serif; font-size: 17px; }
 .track-item .muted { line-height: 1.6; }
+
+/* ---------- 360° ni talabga ko'ra yuklash tugmasi ---------- */
+.spin-call {
+  position: absolute; left: 50%; bottom: 14px; translate: -50% 0; z-index: 3;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border: 1px solid var(--line); background: var(--glass);
+  backdrop-filter: blur(8px); color: var(--text); cursor: pointer;
+  font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap;
+  transition: background .3s, border-color .3s;
+}
+.spin-call:hover { border-color: var(--accent); }
+.spin-call svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.sc-stage { position: relative; }
+.pd-media .spin-call { bottom: 16px; }

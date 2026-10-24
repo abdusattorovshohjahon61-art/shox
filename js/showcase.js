@@ -69,8 +69,16 @@
       cv.dataset.spin = "0";       // o'z-o'zidan to'liq aylanmaydi, sekin tebranadi
       Shoe3D.mountAll(stage);
     }
-    if (window.Spin360) {
-      Spin360.mountFor(stage, p, { label: t("spin.badge") });
+    /* 360° kadrlar sahifa ochilishida yuklanmaydi — tugma bosilganda keladi.
+       Shunday qilib vitrinani almashtirish ham bir zumda bo'ladi. */
+    if (window.Spin360 && (p.has360 || p.spin)) {
+      const btn = document.createElement("button");
+      btn.className = "spin-call";
+      btn.type = "button";
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/>' +
+        '<path d="M18 3v4h-4M6 21v-4h4"/></svg><span>' + esc(t("spin.badge")) + "</span>";
+      btn.addEventListener("click", () => Spin360.mountFor(stage, p, { label: t("spin.badge") }));
+      stage.appendChild(btn);
     }
     stage.classList.remove("in");
     requestAnimationFrame(() => stage.classList.add("in"));

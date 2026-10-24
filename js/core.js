@@ -204,7 +204,12 @@
 
   function decorate(list) {
     return list.map(p => {
-      if (SPIN_SETS[p.id] && !p.spin) p.spin = SPIN_SETS[p.id];
+      // Bitta faylli versiyada hamma kadr ichiga joylanmaydi — yo'qini ko'rsatmaymiz
+      const set = SPIN_SETS[p.id];
+      if (set && !p.spin &&
+          (!window.__ASSET_MAP || window.__ASSET_MAP[set.dir + "/00." + (set.ext || "jpg")])) {
+        p.spin = set;
+      }
       if (PHOTOS[p.id] && !p.photo) p.photo = PHOTOS[p.id];
       if (PHOTOS[p.id] && !p.image) p.image = PHOTOS[p.id];
       return p;

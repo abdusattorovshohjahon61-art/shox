@@ -17,11 +17,15 @@ window.Spin360 = (function () {
     const few = n < 10;
     const step = Math.max(90, Math.round(1800 / n));
 
+    /* Avval faqat 3 ta kadr, qolgani bo'sh vaqtda to'ldiriladi:
+       shunda sahifa ochilishi 20+ so'rovni kutib turmaydi. */
+    const EAGER = 3;
+
     host.innerHTML =
       '<div class="spin360' + (few ? " few" : "") + '">' +
         '<div class="spin-stage">' +
-          urls.map((u, i) => '<img src="' + u + '" alt="" draggable="false"' +
-            (i === 0 ? ' class="on"' : "") + (i < 3 ? "" : ' loading="lazy"') + ">").join("") +
+          urls.map((u, i) => '<img ' + (i < EAGER ? 'src="' + u + '"' : 'data-src="' + u + '"') +
+            ' alt="" draggable="false"' + (i === 0 ? ' class="on"' : "") + ">").join("") +
         "</div>" +
         '<div class="spin-hint"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>' +
           "<span>" + (o.label || "360°") + "</span></div>" +
@@ -30,8 +34,24 @@ window.Spin360 = (function () {
     const root = host.querySelector(".spin360");
     const imgs = Array.prototype.slice.call(host.querySelectorAll(".spin-stage img"));
 
+    /* Qolgan kadrlarni navbat bilan yuklaymiz */
+    let fillAt = EAGER;
+    function fillNext() {
+      if (fillAt >= imgs.length || !root.isConnected) return;
+      const im = imgs[fillAt++];
+      if (im.dataset.src) { im.src = im.dataset.src; im.removeAttribute("data-src"); }
+      (window.requestIdleCallback || (fn => setTimeout(fn, 60)))(fillNext);
+    }
+    (window.requestIdleCallback || (fn => setTimeout(fn, 300)))(fillNext);
+    /* Kerak bo'lib qolgan kadr darhol yuklansin */
+    function need(i) {
+      const im = imgs[i];
+      if (im && im.dataset.src) { im.src = im.dataset.src; im.removeAttribute("data-src"); }
+    }
+
     function show(i) {
       const k = ((i % n) + n) % n;
+      need(k); need((k + 1) % n);
       if (k === idx) return;
       imgs[idx].classList.remove("on");
       imgs[k].classList.add("on");

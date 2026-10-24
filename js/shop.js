@@ -190,9 +190,16 @@
       </div>`;
     mount3D("#productBody");
     if (window.Reviews) Reviews.mount($("#pdReviews"), p.id);
-    /* Kadrlar bo'lsa — haqiqiy 360°, bo'lmasa bitta suratdan avtomat 3D */
-    if (window.Spin360) {
-      Spin360.mountFor($("#pdImg"), p, { label: t("spin.badge") });
+    /* 360° — faqat so'ralganda yuklanadi */
+    if (window.Spin360 && (p.has360 || p.spin)) {
+      const host = $("#pdImg");
+      const btn = document.createElement("button");
+      btn.className = "spin-call";
+      btn.type = "button";
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/>' +
+        '<path d="M18 3v4h-4M6 21v-4h4"/></svg><span>' + esc(t("spin.badge")) + "</span>";
+      btn.addEventListener("click", () => Spin360.mountFor(host, p, { label: t("spin.badge") }));
+      $("#productBody").querySelector(".pd-media").appendChild(btn);
     }
   }
 
