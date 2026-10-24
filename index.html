@@ -7,7 +7,7 @@
   <meta name="description" content="Nilufar Shoes — tufli, krossovka, etik, sandal va loferlar. Sifatli oyoq kiyim O'zbekiston bo'ylab yetkazib berish bilan. 500 000 so'mdan ortiq xaridlarga yetkazish bepul.">
   <meta name="keywords" content="Nilufar Shoes, Nilufar poyabzal, oyoq kiyim, tufli, krossovka, etik, sandal, lofer, ayollar oyoq kiyimi, obuv Tashkent, обувь Узбекистан">
   <meta name="author" content="Nilufar Shoes">
-  <link rel="canonical" href="https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/">
+  <link rel="canonical" href="https://abdusattorovshohjahon61-art.github.io/shox/">
   <link rel="icon" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
   <meta name="theme-color" content="#b3123b">
@@ -18,7 +18,7 @@
   <meta property="og:title" content="Nilufar Shoes — oyoq kiyim do'koni">
   <meta property="og:description" content="Tufli, krossovka, etik, sandal va loferlar. O'zbekiston bo'ylab yetkazib berish.">
   <meta property="og:image" content="https://abdusattorovshohjahon61-art.github.io/shox/assets/products/p1.jpg">
-  <meta property="og:url" content="https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/">
+  <meta property="og:url" content="https://abdusattorovshohjahon61-art.github.io/shox/">
   <meta property="og:locale" content="uz_UZ">
   <meta property="og:locale:alternate" content="ru_RU">
   <meta property="og:locale:alternate" content="en_US">
@@ -35,9 +35,9 @@
     "name": "Nilufar Shoes",
     "alternateName": ["Nilufar poyabzal", "Нилуфар Шуз"],
     "description": "Ayollar va erkaklar uchun oyoq kiyim do'koni. O'zbekiston bo'ylab yetkazib berish.",
-    "image": "https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/assets/logo.png",
-    "logo": "https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/assets/logo.png",
-    "url": "https://abdusattorovshohjahon61-art.github.io/nilufar-shoes/",
+    "image": "https://abdusattorovshohjahon61-art.github.io/shox/assets/logo.png",
+    "logo": "https://abdusattorovshohjahon61-art.github.io/shox/assets/logo.png",
+    "url": "https://abdusattorovshohjahon61-art.github.io/shox/",
     "telephone": "+998901234567",
     "priceRange": "200000-900000 UZS",
     "currenciesAccepted": "UZS",
@@ -96,8 +96,11 @@
           <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
           <span class="badge" id="cartCount">0</span>
         </button>
-        <a class="icon-btn ceo-link" href="admin.html" data-i18n-title="nav.ceo">
+        <button class="icon-btn" id="trackBtn" data-i18n-title="track.title">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        </button>
+        <a class="icon-btn ceo-link" href="admin.html" data-i18n-title="nav.ceo">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
         </a>
         <button class="icon-btn burger" id="burger" aria-label="menu">
           <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -307,6 +310,22 @@
   </div>
 
   <!-- MUVAFFAQIYAT -->
+  <div class="modal" id="trackModal" aria-hidden="true">
+    <div class="modal-box modal-sm">
+      <button class="modal-close" data-close aria-label="close">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <h3 data-i18n="track.title">Buyurtmam qayerda?</h3>
+      <p class="muted" data-i18n="track.hint"></p>
+      <form id="trackForm" class="form">
+        <label class="field"><span data-i18n="checkout.phone">Telefon</span><input name="phone" id="trackPhone" inputmode="tel" required></label>
+        <label class="field"><span data-i18n="track.number">Buyurtma raqami</span><input name="id" type="number" min="1" placeholder="1001"></label>
+        <button class="btn btn-primary btn-block" data-i18n="track.find">Topish</button>
+      </form>
+      <div id="trackResult"></div>
+    </div>
+  </div>
+
   <div class="modal" id="successModal" aria-hidden="true">
     <div class="modal-box success-box">
       <div class="check-anim"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l7 7 15-15"/></svg></div>
@@ -334,6 +353,7 @@
   <script src="js/shoe3d.js"></script>
   <script src="js/effects.js"></script>
   <script src="js/showcase.js"></script>
+  <script src="js/reviews.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/analytics.js"></script>
   <script src="js/cattiles.js"></script>

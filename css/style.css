@@ -917,3 +917,40 @@ tbody tr:hover { background: var(--surface2); }
 .sz.warn { color: #b8860b; }
 .sz.bad { color: #b3123b; opacity: .55; text-decoration: line-through; }
 #cloudSqlBox { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--text); padding: 10px; }
+
+/* ---------- 2.0: sharhlar ---------- */
+.pd-reviews { margin: 20px 0 0; border-top: 1px solid var(--line); padding-top: 18px; }
+.rv-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.rv-head h4 { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 0; }
+.rv-avg { display: flex; align-items: baseline; gap: 7px; font-size: 13px; }
+.rv-avg b { font-family: "Cormorant Garamond", Georgia, serif; font-size: 18px; }
+.stars { letter-spacing: 1px; color: var(--accent); font-size: 13px; }
+.stars.sm { font-size: 11px; }
+.stars i { font-style: normal; opacity: .25; }
+.stars i.on { opacity: 1; }
+.rv-fit { margin: 12px 0; padding: 9px 12px; font-size: 12.5px; background: var(--surface); border-left: 2px solid var(--accent); }
+.rv-fit.small, .rv-fit.large { border-left-color: #b8860b; }
+.rv-list { display: grid; gap: 12px; margin: 12px 0; }
+.rv-item { font-size: 13px; }
+.rv-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rv-top b { font-weight: 500; }
+.rv-top .muted { font-size: 11.5px; }
+.rv-item p { margin: 4px 0 0; color: var(--muted); line-height: 1.55; }
+.rv-none { font-size: 13px; }
+.rv-open { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+.rv-form { display: grid; gap: 10px; margin-top: 12px; }
+.rv-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rv-row input[type=text], .rv-row input:not([type]), .rv-row select, .rv-form textarea {
+  padding: 9px 11px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 13px; font-family: inherit;
+}
+.rv-row input:not([type]) { flex: 1; min-width: 120px; }
+.rv-form textarea { width: 100%; resize: vertical; }
+.rv-fitpick { font-size: 12.5px; color: var(--muted); gap: 14px; }
+.rv-fitpick label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+
+/* ---------- 2.0: buyurtmani kuzatish ---------- */
+.track-list { display: grid; gap: 12px; margin-top: 16px; }
+.track-item { padding: 12px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.track-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.track-top b { font-family: "Cormorant Garamond", Georgia, serif; font-size: 17px; }
+.track-item .muted { line-height: 1.6; }

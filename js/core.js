@@ -396,7 +396,7 @@
   function phoneMask(input) {
     input.addEventListener("input", () => {
       let d = input.value.replace(/\D/g, "");
-      if (d.startsWith("998")) d = d.slice(3);
+      while (d.length > 9 && d.startsWith("998")) d = d.slice(3);
       d = d.slice(0, 9);
       let out = "+998";
       if (d.length) out += " " + d.slice(0, 2);

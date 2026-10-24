@@ -181,6 +181,7 @@
                 : esc(t("product.outStock"))}</small>`;
             })()}
           </div>
+          <div id="pdReviews" class="pd-reviews"></div>
           <div class="pd-actions">
             <button class="btn btn-primary btn-block" id="pdAdd" ${p.stock <= 0 ? "disabled" : ""}>${esc(t("product.addCart"))}</button>
             <button class="icon-btn fav-big ${favs.includes(p.id) ? "on" : ""}" data-fav="${p.id}" aria-label="fav">${heartSVG}</button>
@@ -188,6 +189,7 @@
         </div>
       </div>`;
     mount3D("#productBody");
+    if (window.Reviews) Reviews.mount($("#pdReviews"), p.id);
     /* Kadrlar bo'lsa — haqiqiy 360°, bo'lmasa bitta suratdan avtomat 3D */
     if (window.Spin360) {
       Spin360.mountFor($("#pdImg"), p, { label: t("spin.badge") });
@@ -665,6 +667,59 @@
     };
     r.readAsDataURL(file);
   });
+  /* ---------- "Buyurtmam qayerda?" ---------- */
+  function trackRows(list) {
+    if (!list.length) return `<p class="muted" style="margin-top:14px">${esc(t("track.none"))}</p>`;
+    return `<div class="track-list">` + list.map(o => `
+      <div class="track-item">
+        <div class="track-top"><b>#${o.id}</b><span class="pill ${o.status === "cancelled" ? "bad" : o.status === "done" ? "ok" : "warn"}">${esc(t("st." + o.status))}</span></div>
+        <div class="muted">${new Date(o.date).toLocaleDateString()} · ${money(o.total)}</div>
+        <div class="muted">${(o.items || []).map(it => {
+          const p = Store.product(it.id);
+          return esc((p ? pname(p) : it.id) + " (" + it.size + ") ×" + it.qty);
+        }).join(", ")}</div>
+      </div>`).join("") + `</div>`;
+  }
+
+  async function findOrders(phone, id) {
+    // Oxirgi 9 raqam bo'yicha solishtiramiz — kod bilan ham, kodsiz ham topiladi
+    const tail = n => String(n || "").replace(/\D/g, "").slice(-9);
+    const digits = tail(phone);
+    if (digits.length < 9) return [];
+    let all = Store.orders();
+    if (window.Cloud && Cloud.ready()) {
+      try { const c = await Cloud.orders(); if (c) all = c; } catch (e) { /* mahalliy ro'yxat */ }
+    }
+    return all.filter(o =>
+      tail(o.phone) === digits &&
+      (!id || +o.id === +id));
+  }
+
+  $("#trackBtn").addEventListener("click", () => {
+    $("#trackResult").innerHTML = "";
+    const mine = Store.orders();
+    if (mine.length) $("#trackResult").innerHTML = trackRows(mine.slice(0, 5));
+    openModal("#trackModal");
+    NS.phoneMask($("#trackPhone"));
+  });
+  $("#trackForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target;
+    $("#trackResult").innerHTML = `<p class="muted" style="margin-top:14px">…</p>`;
+    const list = await findOrders(f.phone.value, f.id.value);
+    $("#trackResult").innerHTML = trackRows(list);
+  });
+
+  /* Alohida mahsulot manzili: index.html#p=p1 — tashqi sahifalardan kelish uchun */
+  function openFromHash() {
+    const m = /[#&]p=([A-Za-z0-9_-]+)/.exec(location.hash);
+    if (!m) return;
+    const p = Store.product(m[1]);
+    if (p) openProduct(p.id);
+  }
+  window.addEventListener("hashchange", openFromHash);
+  setTimeout(openFromHash, 400);
+
   $("#burger").addEventListener("click", () => document.body.classList.toggle("nav-open"));
   $("#nav").addEventListener("click", e => { if (e.target.tagName === "A") document.body.classList.remove("nav-open"); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
