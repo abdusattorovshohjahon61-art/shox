@@ -265,8 +265,11 @@
           <td><div class="t-prod"><div class="line-img">${productVisual(p)}</div><div><b>${esc(pname(p))}</b>${p.isNew ? ` <span class="pill star">${esc(t("product.new"))}</span>` : ""}${p.has360 ? ` <span class="pill ok">360°</span>` : ""}</div></div></td>
           <td>${esc(t("cat." + p.category))}</td>
           <td><b>${money(p.price)}</b>${p.oldPrice ? `<br><s class="muted">${money(p.oldPrice)}</s>` : ""}</td>
-          <td><span class="pill ${p.stock <= 0 ? "bad" : p.stock < 5 ? "warn" : "ok"}">${p.stock}</span></td>
-          <td class="muted">${p.sizes.join(", ")}</td>
+          <td><span class="pill ${Store.totalStock(p) <= 0 ? "bad" : Store.totalStock(p) <= (Store.settings().lowStock || 3) ? "warn" : "ok"}">${Store.totalStock(p)}</span></td>
+          <td class="muted">${p.sizes.map(z => {
+            const n = +Store.sizeStock(p)[z] || 0;
+            return `<span class="sz ${n <= 0 ? "bad" : n <= (Store.settings().lowStock || 3) ? "warn" : ""}">${z}<i>${n}</i></span>`;
+          }).join(" ")}</td>
           <td><div class="row-actions">
             <button class="icon-btn" data-edit="${p.id}" title="${esc(t("edit"))}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
             <button class="icon-btn" data-del="${p.id}" title="${esc(t("delete"))}"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
@@ -315,10 +318,13 @@
         <label class="field">${esc(t("pr.oldPrice"))}<input name="oldPrice" type="number" min="0" step="1000" value="${p.oldPrice || ""}"></label>
       </div>
       <div class="row2">
-        <label class="field">${esc(t("pr.stock"))}<input name="stock" type="number" min="0" value="${p.stock}"></label>
+        <label class="field">${esc(t("pr.stock"))}<input name="stock" type="number" min="0" value="${Store.totalStock(p)}" readonly></label>
         <label class="field">${esc(t("pr.sizes"))}<input name="sizes" value="${esc(p.sizes.join(", "))}"></label>
       </div>
       <label class="field">${esc(t("pr.colors"))}<input name="colors" value="${esc(p.colors.join(", "))}"></label>
+      <div class="field">${esc(t("pr.sizeStock"))}
+        <div class="size-stock" id="sizeStock"></div>
+      </div>
       <label class="field">${esc(t("pr.descUz"))}<textarea name="desc_uz" rows="2">${esc(p.desc.uz)}</textarea></label>
       <label class="field">${esc(t("pr.descRu"))}<textarea name="desc_ru" rows="2">${esc(p.desc.ru)}</textarea></label>
       <label class="field">${esc(t("pr.descEn"))}<textarea name="desc_en" rows="2">${esc(p.desc.en)}</textarea></label>
@@ -382,6 +388,22 @@
     });
     f.__frames = () => ({ pendingFrames, clearFrames });
 
+    /* O'lchamlar ro'yxati o'zgarsa — qoldiq maydonlari ham yangilanadi */
+    function drawSizeStock() {
+      const sizes = f.sizes.value.split(",").map(x => parseFloat(x)).filter(x => !isNaN(x));
+      const cur = Store.sizeStock(p);
+      $("#sizeStock").innerHTML = (sizes.length ? sizes : [36, 37, 38, 39, 40]).map(z =>
+        `<label class="ss-cell"><span>${z}</span><input type="number" min="0" data-ss="${z}" value="${+cur[z] || 0}"></label>`
+      ).join("");
+    }
+    drawSizeStock();
+    f.sizes.addEventListener("input", drawSizeStock);
+    $("#sizeStock").addEventListener("input", () => {
+      let total = 0;
+      $("#sizeStock").querySelectorAll("[data-ss]").forEach(i => { total += Math.max(0, +i.value || 0); });
+      f.stock.value = total;
+    });
+
     const preview = () => {
       const tmp = { category: f.category.value, colors: parseColors(f.colors.value), image: editingImage, name: { uz: f.name_uz.value } };
       $("#imgPreview").innerHTML = productVisual(tmp);
@@ -395,6 +417,13 @@
       resizeImage(file, 700).then(data => { editingImage = data; f.image.value = ""; preview(); });
     });
     openModal();
+  }
+
+  function readSizeStock(f) {
+    const out = {};
+    const box = f.querySelector("#sizeStock");
+    if (box) box.querySelectorAll("[data-ss]").forEach(i => { out[i.dataset.ss] = Math.max(0, +i.value || 0); });
+    return out;
   }
 
   function parseColors(s) {
@@ -434,7 +463,7 @@
       category: f.category.value,
       price: Math.max(0, +f.price.value || 0),
       oldPrice: Math.max(0, +f.oldPrice.value || 0),
-      stock: Math.max(0, Math.floor(+f.stock.value || 0)),
+      stockBySize: readSizeStock(f),
       isNew: f.isNew.checked,
       sizes: f.sizes.value.split(",").map(x => parseFloat(x)).filter(x => !isNaN(x)),
       colors: parseColors(f.colors.value),
@@ -443,6 +472,11 @@
       image: editingImage
     };
     if (!data.sizes.length) data.sizes = [36, 37, 38, 39, 40];
+    // Faqat mavjud o'lchamlar qolsin, umumiy qoldiq ulardan yig'iladi
+    const keep = {};
+    data.sizes.forEach(z => { keep[z] = Math.max(0, Math.floor(+data.stockBySize[z] || 0)); });
+    data.stockBySize = keep;
+    data.stock = data.sizes.reduce((t, z) => t + keep[z], 0);
     const fr = f.__frames ? f.__frames() : {};
     data.has360 = fr.pendingFrames ? true : fr.clearFrames ? false : !!(old && old.has360);
     if (old) Object.assign(old, data); else list.unshift(data);
@@ -496,7 +530,24 @@
         <td><select class="status-select" data-status="${o.id}">${STATUSES.map(s => `<option value="${s}" ${s === o.status ? "selected" : ""}>${esc(t("st." + s))}</option>`).join("")}</select></td>
       </tr>`).join("")}</tbody></table></div>`;
   }
+  /* Bulutda buyurtmalar bo'lsa — mijozlar bergan buyurtmalarni ham ko'ramiz */
+  function pullOrders() {
+    if (!window.Cloud || !Cloud.ready()) return;
+    Cloud.orders().then(list => {
+      if (!list || !list.length) return;
+      const local = Store.orders();
+      const byId = {};
+      local.forEach(o => { byId[o.id] = o; });
+      let added = 0;
+      list.forEach(o => { if (!byId[o.id]) { local.push(o); added++; } else Object.assign(byId[o.id], o); });
+      local.sort((a, b) => b.date - a.date);
+      Store.writeLocal("orders", local);
+      if (added) { toast(t("set.cloudNew", { n: added })); render(); }
+    }).catch(e => console.warn("buyurtmalar o'qilmadi:", e.message));
+  }
+
   function orders() {
+    pullOrders();
     const all = Store.orders();
     const list = orderFilter === "all" ? all : all.filter(o => o.status === orderFilter);
     $("#view-orders").innerHTML = `
@@ -512,7 +563,12 @@
     if (ps) {
       const list = Store.orders();
       const o = list.find(x => x.id === +ps.dataset.paystatus);
-      if (o) { o.payStatus = ps.value; Store.saveOrders(list); toast(t("payst." + o.payStatus)); render(); }
+      if (o) {
+        o.payStatus = ps.value;
+        Store.saveOrders(list);
+        if (window.Cloud && Cloud.ready()) Cloud.updateOrder(o.id, { payStatus: o.payStatus, data: o }).catch(() => {});
+        toast(t("payst." + o.payStatus)); render();
+      }
       return;
     }
     const s = e.target.closest("[data-status]");
@@ -527,13 +583,13 @@
       const sign = o.status === "cancelled" ? 1 : -1;
       const prods = Store.products();
       o.items.forEach(it => {
-        const p = prods.find(x => x.id === it.id);
-        if (p) p.stock = Math.max(0, p.stock + sign * it.qty);
+        Store.takeStock(prods, it.id, it.size, -sign * it.qty);
         Store.track(it.id, "sold", -sign * it.qty, -sign * it.price * it.qty);
       });
       Store.saveProducts(prods);
     }
     Store.saveOrders(list);
+    if (window.Cloud && Cloud.ready()) Cloud.updateOrder(o.id, { status: o.status, data: o }).catch(() => {});
     toast(t("st." + o.status));
     render();
   });
@@ -612,9 +668,70 @@
           <p class="muted" style="font-size:12.5px;margin:0">${esc(t("set.tgHint"))}</p>
           <button class="btn btn-primary">${esc(t("save"))}</button>
         </form>
+        <form class="panel form" id="cloudForm">
+          <h3>${esc(t("set.cloud"))}</h3>
+          <p class="muted" style="font-size:13px;margin:0">${esc(t("set.cloudHint"))}</p>
+          <label class="field">Supabase URL<input name="supabaseUrl" value="${esc(s.supabaseUrl || "")}" placeholder="https://xxxx.supabase.co"></label>
+          <label class="field">Supabase anon key<input name="supabaseKey" value="${esc(s.supabaseKey || "")}" placeholder="eyJhbGciOi..."></label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-primary">${esc(t("save"))}</button>
+            <button type="button" class="btn" id="cloudTest">${esc(t("set.cloudTest"))}</button>
+            <button type="button" class="link-btn" id="cloudSql">${esc(t("set.cloudSql"))}</button>
+          </div>
+          <span class="muted" id="cloudState">${window.Cloud && Cloud.ready() ? "● " + esc(t("set.cloudOn")) : "○ " + esc(t("set.cloudOff"))}</span>
+          <textarea id="cloudSqlBox" rows="10" hidden readonly style="font-family:ui-monospace,monospace;font-size:11.5px"></textarea>
+        </form>
+
+        <form class="panel form" id="tgForm">
+          <h3>${esc(t("set.tgBot"))}</h3>
+          <p class="muted" style="font-size:13px;margin:0">${esc(t("set.tgBotHint"))}</p>
+          <label class="field">${esc(t("set.tgToken"))}<input name="tgToken" value="${esc(s.tgToken || "")}" placeholder="123456:AAE..."></label>
+          <label class="field">${esc(t("set.tgChat"))}<input name="tgChat" value="${esc(s.tgChat || "")}" placeholder="123456789"></label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary">${esc(t("save"))}</button>
+            <button type="button" class="btn" id="tgTest">${esc(t("set.tgTest"))}</button>
+          </div>
+          <p class="muted" style="font-size:12px;margin:0">⚠ ${esc(t("set.tgWarn"))}</p>
+        </form>
+
+        <div class="panel form" id="deliveryPanel">
+          <h3>${esc(t("set.deliveryTable"))}</h3>
+          <p class="muted" style="font-size:13px;margin:0">${esc(t("set.deliveryTableHint"))}</p>
+          <div class="deliv-grid">
+            ${window.REGIONS.map(r => {
+              const d = Store.delivery()[r.id] || { price: s.deliveryPrice, days: 2 };
+              return `<label class="deliv-row"><span>${esc(r[NS.getLang()])}</span>
+                <input type="number" min="0" step="1000" data-dp="${r.id}" value="${d.price}">
+                <input type="number" min="1" max="30" data-dd="${r.id}" value="${d.days}"></label>`;
+            }).join("")}
+          </div>
+          <button class="btn btn-primary" id="delivSave">${esc(t("save"))}</button>
+        </div>
+
+        <div class="panel form" id="promoPanel">
+          <h3>${esc(t("set.promos"))}</h3>
+          <div id="promoList"></div>
+          <div class="promo-new">
+            <input id="pnCode" placeholder="NILUFAR10">
+            <select id="pnType"><option value="percent">%</option><option value="amount">so'm</option></select>
+            <input id="pnValue" type="number" min="0" value="10" style="max-width:110px">
+            <button class="btn btn-small" id="pnAdd">+ ${esc(t("set.promoAdd"))}</button>
+          </div>
+        </div>
+
+        <form class="panel form" id="anaForm">
+          <h3>${esc(t("set.analytics"))}</h3>
+          <p class="muted" style="font-size:13px;margin:0">${esc(t("set.analyticsHint"))}</p>
+          <label class="field">Google Analytics ID<input name="gaId" value="${esc(s.gaId || "")}" placeholder="G-XXXXXXXXXX"></label>
+          <label class="field">Yandex Metrika ID<input name="metrikaId" value="${esc(s.metrikaId || "")}" placeholder="12345678"></label>
+          <label class="field">${esc(t("set.lowStock"))}<input name="lowStock" type="number" min="1" max="50" value="${s.lowStock || 3}"></label>
+          <button class="btn btn-primary">${esc(t("save"))}</button>
+        </form>
+
         <div class="panel form">
           <h3>${esc(t("set.data"))}</h3>
           <button class="btn" id="exportBtn">⬇ ${esc(t("set.export"))}</button>
+          <button class="btn" id="csvBtn">⬇ ${esc(t("set.csv"))}</button>
           <label class="btn" style="cursor:pointer">⬆ ${esc(t("set.import"))}<input type="file" accept="application/json" id="importFile" hidden></label>
           <button class="btn btn-danger" id="resetBtn">${esc(t("set.resetDemo"))}</button>
         </div>
@@ -641,6 +758,120 @@
       }));
       toast(t("set.saved"));
     });
+    /* ---- Bulut ---- */
+    $("#cloudForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const f = e.target;
+      Store.saveSettings(Object.assign(Store.settings(), {
+        supabaseUrl: f.supabaseUrl.value.trim().replace(/\/+$/, ""),
+        supabaseKey: f.supabaseKey.value.trim()
+      }));
+      if (window.Cloud) Cloud.reset();
+      toast(t("set.saved")); render();
+    });
+    $("#cloudTest").addEventListener("click", async () => {
+      const el = $("#cloudState");
+      el.textContent = "… " + t("set.cloudTest");
+      const r = await Cloud.test();
+      el.textContent = (r.ok ? "● " : "✕ ") + r.msg;
+      if (r.ok) {
+        // Bor ma'lumotni darhol bulutga ko'chiramiz
+        ["products", "settings", "content", "promos", "delivery"].forEach(k => Cloud.queue(k, Store.read(k, null)));
+        Cloud.flush();
+      }
+    });
+    $("#cloudSql").addEventListener("click", () => {
+      const box = $("#cloudSqlBox");
+      box.hidden = !box.hidden;
+      box.value = Cloud.SQL;
+      if (!box.hidden) { box.focus(); box.select(); }
+    });
+
+    /* ---- Telegram bot ---- */
+    $("#tgForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const f = e.target;
+      Store.saveSettings(Object.assign(Store.settings(), {
+        tgToken: f.tgToken.value.trim(), tgChat: f.tgChat.value.trim()
+      }));
+      if (window.Cloud) Cloud.reset();
+      toast(t("set.saved"));
+    });
+    $("#tgTest").addEventListener("click", async () => {
+      if (window.Cloud) Cloud.reset();
+      const ok = await Cloud.notify("✅ " + t("set.tgTestMsg")).catch(() => false);
+      toast(ok ? t("set.tgTestOk") : t("set.tgTestFail"), ok ? "ok" : "err");
+    });
+
+    /* ---- Yetkazib berish jadvali ---- */
+    $("#delivSave").addEventListener("click", () => {
+      const table = {};
+      $("#deliveryPanel").querySelectorAll("[data-dp]").forEach(inp => {
+        const id = inp.dataset.dp;
+        const days = $("#deliveryPanel").querySelector('[data-dd="' + id + '"]');
+        table[id] = { price: +inp.value || 0, days: +(days && days.value) || 2 };
+      });
+      Store.saveDelivery(table);
+      toast(t("set.saved"));
+    });
+
+    /* ---- Promokodlar ---- */
+    function drawPromos() {
+      const list = Store.promos();
+      $("#promoList").innerHTML = list.length
+        ? list.map((p, i) => `<div class="promo-item${p.active === false ? " off" : ""}">
+            <b>${esc(p.code)}</b>
+            <span>${p.type === "amount" ? NS.money(p.value) : p.value + "%"}</span>
+            <button class="link-btn" data-ptoggle="${i}">${p.active === false ? esc(t("set.promoOn")) : esc(t("set.promoOff"))}</button>
+            <button class="link-btn danger" data-pdel="${i}">✕</button>
+          </div>`).join("")
+        : `<p class="muted" style="font-size:13px">${esc(t("set.promoNone"))}</p>`;
+    }
+    drawPromos();
+    $("#promoPanel").addEventListener("click", e => {
+      const list = Store.promos();
+      const d = e.target.closest("[data-pdel]");
+      if (d) { list.splice(+d.dataset.pdel, 1); Store.savePromos(list); drawPromos(); return; }
+      const g = e.target.closest("[data-ptoggle]");
+      if (g) { const p = list[+g.dataset.ptoggle]; p.active = p.active === false; Store.savePromos(list); drawPromos(); return; }
+      if (e.target.closest("#pnAdd")) {
+        const code = $("#pnCode").value.trim().toUpperCase();
+        if (!code) return;
+        list.push({ code, type: $("#pnType").value, value: +$("#pnValue").value || 0, minSum: 0, active: true });
+        Store.savePromos(list); $("#pnCode").value = ""; drawPromos();
+      }
+    });
+
+    /* ---- Analitika ---- */
+    $("#anaForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const f = e.target;
+      Store.saveSettings(Object.assign(Store.settings(), {
+        gaId: f.gaId.value.trim(), metrikaId: f.metrikaId.value.trim(), lowStock: +f.lowStock.value || 3
+      }));
+      toast(t("set.saved"));
+    });
+
+    /* ---- Buxgalteriya uchun CSV ---- */
+    $("#csvBtn").addEventListener("click", () => {
+      const rows = [["№", "Sana", "Mijoz", "Telefon", "Viloyat", "Manzil", "Mahsulotlar", "Jami", "Holat", "To'lov"]];
+      Store.orders().forEach(o => rows.push([
+        o.id,
+        new Date(o.date).toLocaleString("uz-UZ"),
+        o.name, o.phone, NS.regionName(o.region), o.address,
+        (o.items || []).map(it => {
+          const p = Store.product(it.id);
+          return (p ? NS.pname(p) : it.id) + " (" + it.size + ") ×" + it.qty;
+        }).join("; "),
+        o.total, o.status, o.payStatus || ""
+      ]));
+      const csv = "\uFEFF" + rows.map(r => r.map(c => '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"').join(";")).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      a.download = "buyurtmalar-" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.click();
+    });
+
     $("#exportBtn").addEventListener("click", () => {
       const dump = {};
       ["products", "orders", "stats", "content", "settings"].forEach(k => { dump[k] = Store.read(k, null); });

@@ -164,14 +164,22 @@
           </div>
           <div class="pd-group">
             <span>${esc(t("product.size"))}</span>
-            <div class="size-pick">${p.sizes.map(s => `<button class="${s === current.size ? "active" : ""}" data-size="${s}">${s}</button>`).join("")}</div>
+            <div class="size-pick">${p.sizes.map(s => {
+              const left = +Store.sizeStock(p)[s] || 0;
+              return `<button class="${s === current.size ? "active" : ""}${left ? "" : " gone"}" data-size="${s}" ${left ? "" : "disabled"} title="${left ? esc(t("product.inStock", { n: left })) : esc(t("product.outStock"))}">${s}</button>`;
+            }).join("")}</div>
           </div>
           <div class="pd-group">
             <span>${esc(t("product.qty"))}</span>
             <div class="qty">
               <button data-qty="-1">−</button><b>${current.qty}</b><button data-qty="1">+</button>
             </div>
-            <small class="${p.stock < 5 ? "warn" : "muted"}">${p.stock > 0 ? esc(t("product.inStock", { n: p.stock })) : esc(t("product.outStock"))}</small>
+            ${(() => {
+              const left = current.size ? (+Store.sizeStock(p)[current.size] || 0) : Store.totalStock(p);
+              return `<small class="${left < 5 ? "warn" : "muted"}">${left > 0
+                ? esc(current.size ? t("product.leftSize", { n: left, size: current.size }) : t("product.inStock", { n: left }))
+                : esc(t("product.outStock"))}</small>`;
+            })()}
           </div>
           <div class="pd-actions">
             <button class="btn btn-primary btn-block" id="pdAdd" ${p.stock <= 0 ? "disabled" : ""}>${esc(t("product.addCart"))}</button>
@@ -204,7 +212,11 @@
     const s = e.target.closest("[data-size]");
     if (s) { current.size = +s.dataset.size; renderProduct(); return; }
     const q = e.target.closest("[data-qty]");
-    if (q) { current.qty = Math.max(1, Math.min(p.stock, current.qty + +q.dataset.qty)); renderProduct(); return; }
+    if (q) {
+      const left = current.size ? (+Store.sizeStock(p)[current.size] || 0) : Store.totalStock(p);
+      current.qty = Math.max(1, Math.min(Math.max(1, left), current.qty + +q.dataset.qty));
+      renderProduct(); return;
+    }
     if (e.target.closest("#pdAdd")) {
       if (!current.size) { toast(t("product.chooseSize"), "warn"); $(".size-pick").classList.add("shake"); setTimeout(() => $(".size-pick") && $(".size-pick").classList.remove("shake"), 500); return; }
       addToCart(current);
@@ -227,12 +239,40 @@
     renderCart();
   }
 
+  /* Tanlangan viloyat va promokod — jami summaga ta'sir qiladi */
+  let region = "", promo = null;
+
+  function deliveryFor(reg) {
+    const table = Store.delivery();
+    const st = Store.settings();
+    const row = table[reg];
+    return row ? row : { price: st.deliveryPrice, days: 2 };
+  }
+
+  function findPromo(code) {
+    const c = String(code || "").trim().toUpperCase();
+    if (!c) return null;
+    const now = Date.now();
+    return Store.promos().find(p =>
+      String(p.code).toUpperCase() === c &&
+      p.active !== false &&
+      (!p.until || new Date(p.until).getTime() >= now)) || null;
+  }
+
   function cartTotals() {
     const cart = Store.cart();
     const st = Store.settings();
     const subtotal = cart.reduce((s, c) => { const p = Store.product(c.id); return s + (p ? p.price * c.qty : 0); }, 0);
-    const delivery = subtotal === 0 || subtotal >= st.freeFrom ? 0 : st.deliveryPrice;
-    return { subtotal, delivery, total: subtotal + delivery };
+    const d = deliveryFor(region);
+    let delivery = subtotal === 0 || subtotal >= st.freeFrom ? 0 : d.price;
+    let discount = 0;
+    if (promo && subtotal >= (promo.minSum || 0)) {
+      discount = promo.type === "amount"
+        ? Math.min(subtotal, +promo.value || 0)
+        : Math.round(subtotal * (+promo.value || 0) / 100);
+      if (promo.freeDelivery) delivery = 0;
+    }
+    return { subtotal, delivery, discount, days: d.days, total: Math.max(0, subtotal - discount) + delivery };
   }
 
   function renderCart() {
@@ -260,7 +300,13 @@
     }).join("");
     const tt = cartTotals();
     $("#cartFoot").innerHTML = `
+      <div class="promo-row">
+        <input id="promoInput" placeholder="${esc(t("promo.placeholder"))}" value="${esc(promo ? promo.code : "")}">
+        <button class="btn btn-small" id="promoApply">${esc(t("promo.apply"))}</button>
+      </div>
+      <div class="promo-msg ${promo ? "ok" : ""}" id="promoMsg">${promo ? esc(t("promo.on", { code: promo.code })) : ""}</div>
       <div class="sum-row"><span>${esc(t("cart.subtotal"))}</span><span>${money(tt.subtotal)}</span></div>
+      ${tt.discount ? `<div class="sum-row off"><span>${esc(t("promo.discount"))}</span><span>−${money(tt.discount)}</span></div>` : ""}
       <div class="sum-row"><span>${esc(t("cart.delivery"))}</span><span>${tt.delivery ? money(tt.delivery) : esc(t("cart.free"))}</span></div>
       <div class="sum-row total"><span>${esc(t("cart.total"))}</span><span>${money(tt.total)}</span></div>
       <button class="btn btn-primary btn-block" id="toCheckout">${esc(t("cart.checkout"))}</button>`;
@@ -281,6 +327,28 @@
       Store.track(it.id, "carts", -it.qty);
       cart.splice(+r.dataset.rm, 1);
       Store.saveCart(cart); renderCart(); updateCounts(); return;
+    }
+    if (e.target.closest("#promoApply")) {
+      const code = ($("#promoInput").value || "").trim();
+      const found = findPromo(code);
+      const msg = $("#promoMsg");
+      if (!code) { promo = null; renderCart(); return; }
+      if (!found) {
+        promo = null;
+        msg.className = "promo-msg bad";
+        msg.textContent = t("promo.bad");
+        return;
+      }
+      const sub = cartTotals().subtotal;
+      if (found.minSum && sub < found.minSum) {
+        promo = null;
+        msg.className = "promo-msg bad";
+        msg.textContent = t("promo.min", { sum: money(found.minSum) });
+        return;
+      }
+      promo = found;
+      renderCart();
+      return;
     }
     if (e.target.closest("#toCheckout")) openCheckout();
   }
@@ -307,7 +375,8 @@
     const tt = cartTotals();
     $("#checkoutSummary").innerHTML = `
       <div class="sum-row"><span>${esc(t("cart.subtotal"))}</span><span>${money(tt.subtotal)}</span></div>
-      <div class="sum-row"><span>${esc(t("cart.delivery"))}</span><span>${tt.delivery ? money(tt.delivery) : esc(t("cart.free"))}</span></div>
+      ${tt.discount ? `<div class="sum-row off"><span>${esc(t("promo.discount"))}</span><span>−${money(tt.discount)}</span></div>` : ""}
+      <div class="sum-row"><span>${esc(t("cart.delivery"))}${region ? ` <small class="muted">${esc(t("checkout.days", { n: tt.days }))}</small>` : ""}</span><span>${tt.delivery ? money(tt.delivery) : esc(t("cart.free"))}</span></div>
       <div class="sum-row total"><span>${esc(t("cart.total"))}</span><span>${money(tt.total)}</span></div>`;
   }
 
@@ -362,11 +431,8 @@
     openModal("#checkoutModal");
   }
 
-  /* Buyurtma matnini Telegram uchun tayyorlaymiz */
-  function telegramLink(order) {
-    const st = Store.settings();
-    const user = String(st.telegram || "").replace(/^@/, "").trim();
-    if (!user) return "";
+  /* Buyurtma matni — Telegram havolasi uchun ham, bot xabari uchun ham */
+  function orderText(order) {
     const items = order.items.map(it => {
       const p = Store.product(it.id);
       return "• " + (p ? pname(p) : it.id) + " — " + it.size + " — " + it.qty + " dona — " + money(it.price * it.qty);
@@ -384,9 +450,16 @@
       "",
       "💳 " + t("tg.payment") + ": " + t("pay." + order.payment),
       "💰 " + t("tg.total") + ": " + money(order.total),
+      order.promo ? "🏷 " + t("promo.discount") + ": " + order.promo : "",
       order.note ? "\n💬 " + order.note : ""
     ].join("\n");
-    return "https://t.me/" + encodeURIComponent(user) + "?text=" + encodeURIComponent(txt);
+    return txt;
+  }
+
+  function telegramLink(order) {
+    const user = String(Store.settings().telegram || "").replace(/^@/, "").trim();
+    if (!user) return "";
+    return "https://t.me/" + encodeURIComponent(user) + "?text=" + encodeURIComponent(orderText(order));
   }
 
   function submitOrder(e) {
@@ -406,7 +479,7 @@
     const products = Store.products();
     const items = cart.map(c => {
       const p = products.find(x => x.id === c.id);
-      p.stock = Math.max(0, p.stock - c.qty);
+      Store.takeStock(products, c.id, c.size, c.qty);   // aynan shu o'lcham kamayadi
       Store.track(c.id, "sold", c.qty, p.price * c.qty);
       return { id: c.id, size: c.size, color: c.color, qty: c.qty, price: p.price };
     });
@@ -415,15 +488,23 @@
     const orders = Store.orders();
     const id = orders.reduce((m, o) => Math.max(m, o.id), 1000) + 1;
     const payStatus = data.payment === "cash" ? "cod" : "unpaid";
-    orders.unshift(Object.assign({ id, date: Date.now(), status: "new", payStatus, items, lang: getLang() }, data, tt));
+    const order = Object.assign({ id, date: Date.now(), status: "new", payStatus, items, lang: getLang() },
+      data, tt, promo ? { promo: promo.code } : {});
+    orders.unshift(order);
     Store.saveOrders(orders);
+    /* Buyurtma do'kon egasiga yetib borsin — brauzer tozalansa ham yo'qolmaydi */
+    if (window.Cloud) {
+      Cloud.sendOrder(order).catch(e => console.warn("buyurtma bulutga ketmadi:", e.message));
+      Cloud.notify(orderText(order)).catch(() => {});
+    }
+    window.dispatchEvent(new CustomEvent("order:done", { detail: order }));
+    promo = null;
     Store.saveCart([]);
     f.reset();
     updateCounts(); renderCart(); renderGrid();
     closeAll();
     $("#successText").textContent = t("checkout.successText", { id, phone: data.phone });
     lastOrderId = id;
-    const order = orders[0];
     const tg = telegramLink(order);
     $("#successPay").innerHTML =
       (tg ? `<a class="btn btn-tg btn-block" href="${esc(tg)}" target="_blank" rel="noopener">
@@ -526,6 +607,8 @@
   $("#checkoutForm").addEventListener("submit", submitOrder);
   $("#checkoutForm").addEventListener("change", e => {
     if (e.target.name === "payment") renderPayBlock();
+    // Viloyat tanlanishi yetkazib berish narxi va muddatini o'zgartiradi
+    if (e.target.name === "region") { region = e.target.value; renderSummary(); renderPayBlock(); }
   });
 
   /* Karta raqamidan nusxa olish, chek yuklash, "to'ladim" */

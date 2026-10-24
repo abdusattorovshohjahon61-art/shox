@@ -11,7 +11,38 @@
     cardHolder: "NILUFAR SHOES",
     clickLink: "",
     paymeLink: "",
-    telegram: "nilufar_shoes"
+    telegram: "nilufar_shoes",
+    /* 2.0 — bulut va bildirishnoma */
+    supabaseUrl: "",
+    supabaseKey: "",
+    tgToken: "",
+    tgChat: "",
+    /* Analitika */
+    gaId: "",
+    metrikaId: "",
+    /* To'lov tizimlari (havola o'zi yasaladi) */
+    paymeMerchant: "",
+    clickServiceId: "",
+    clickMerchantId: "",
+    lowStock: 3
+  };
+
+  /* Yetkazib berish: viloyat → { narx, kun }. CEO panelda o'zgartiriladi. */
+  const DEFAULT_DELIVERY = {
+    tashkent_city: { price: 20000, days: 1 },
+    tashkent:      { price: 30000, days: 2 },
+    samarkand:     { price: 35000, days: 2 },
+    bukhara:       { price: 35000, days: 3 },
+    fergana:       { price: 35000, days: 2 },
+    andijan:       { price: 35000, days: 2 },
+    namangan:      { price: 35000, days: 2 },
+    jizzakh:       { price: 35000, days: 2 },
+    syrdarya:      { price: 30000, days: 2 },
+    navoi:         { price: 40000, days: 3 },
+    kashkadarya:   { price: 40000, days: 3 },
+    surkhandarya:  { price: 45000, days: 3 },
+    khorezm:       { price: 45000, days: 3 },
+    karakalpakstan:{ price: 50000, days: 4 }
   };
 
   /* ---------- Saqlash ---------- */
@@ -22,6 +53,13 @@
     } catch (e) { return fallback; }
   }
   function write(name, value) {
+    try { localStorage.setItem(KEY + ":" + name, JSON.stringify(value)); } catch (e) { return false; }
+    if (window.Cloud) { if (name === "settings") Cloud.reset(); Cloud.queue(name, value); }
+    window.dispatchEvent(new CustomEvent("store:change", { detail: name }));
+    return true;
+  }
+  /* Bulutdan kelgan qiymat — qaytarib yubormaymiz */
+  function writeLocal(name, value) {
     try { localStorage.setItem(KEY + ":" + name, JSON.stringify(value)); } catch (e) { return false; }
     window.dispatchEvent(new CustomEvent("store:change", { detail: name }));
     return true;
@@ -174,8 +212,36 @@
   }
 
   /* ---------- Do'kon API ---------- */
+  /* ---------- O'lcham bo'yicha ombor ----------
+     Eski mahsulotlarda faqat umumiy `stock` bor edi. Uni o'lchamlarga
+     teng bo'lib chiqamiz, shunda 37-raqam tugasa ham sotuvga chiqmaydi. */
+  function sizeStock(p) {
+    if (p.stockBySize && typeof p.stockBySize === "object") return p.stockBySize;
+    const n = (p.sizes || []).length || 1;
+    const each = Math.floor((p.stock || 0) / n);
+    const rest = (p.stock || 0) - each * n;
+    const m = {};
+    (p.sizes || []).forEach((sz, i) => { m[sz] = each + (i < rest ? 1 : 0); });
+    return m;
+  }
+  function totalStock(p) {
+    const m = sizeStock(p);
+    return Object.keys(m).reduce((t, k) => t + (+m[k] || 0), 0);
+  }
+  function takeStock(list, id, size, qty) {
+    const p = list.find(x => x.id === id);
+    if (!p) return list;
+    const m = Object.assign({}, sizeStock(p));
+    const key = String(size);
+    if (m[key] != null) m[key] = Math.max(0, m[key] - (qty || 1));
+    p.stockBySize = m;
+    p.stock = Object.keys(m).reduce((t, k) => t + (+m[k] || 0), 0);
+    return list;
+  }
+
   const Store = {
-    read, write, seedDemo,
+    read, write, writeLocal, seedDemo,
+    sizeStock, totalStock, takeStock,
     products: () => decorate(read("products", [])),
     saveProducts: list => write("products", list),
     product: id => decorate(read("products", [])).find(p => p.id === id),
@@ -189,6 +255,10 @@
     saveCart: c => write("cart", c),
     favs: () => read("favs", []),
     saveFavs: f => write("favs", f),
+    promos: () => read("promos", []),
+    savePromos: l => write("promos", l),
+    delivery: () => read("delivery", null) || DEFAULT_DELIVERY,
+    saveDelivery: d => write("delivery", d),
     stats: () => read("stats", {}),
     /* Analitika hodisasi: views | carts | favs | sold */
     track(id, field, amount = 1, revenue = 0) {
@@ -350,6 +420,33 @@
   window.NS = {
     Store, t, setLang, getLang: () => lang, applyI18n, toggleTheme, money, esc, pname, pdesc,
     regionName, toast, shoeSVG, productVisual, productVisual3D, download, phoneMask, bindCommon, rnd,
-    SHOE_PATHS, shade
+    SHOE_PATHS, shade, DEFAULT_DELIVERY
   };
+
+  /* ---------- Bulut bilan boshlang'ich moslash ----------
+     Sozlangan bo'lsa, do'kon ma'lumotini bulutdan olamiz: shunda
+     telefonda qo'shilgan mahsulot kompyuterda ham ko'rinadi. */
+  (function syncFromCloud() {
+    if (!window.Cloud || !Cloud.ready()) return;
+    Cloud.pull().then(data => {
+      if (!data) return;
+      let changed = false;
+      ["products", "content", "promos", "delivery"].forEach(k => {
+        if (data[k] != null) { writeLocal(k, data[k]); changed = true; }
+      });
+      if (data.settings) {
+        // Maxfiy kalitlar faqat shu qurilmada qoladi
+        const local = read("settings", {});
+        const merged = Object.assign({}, data.settings, {
+          supabaseUrl: local.supabaseUrl || data.settings.supabaseUrl,
+          supabaseKey: local.supabaseKey || data.settings.supabaseKey,
+          tgToken: local.tgToken || data.settings.tgToken,
+          password: local.password || data.settings.password
+        });
+        writeLocal("settings", merged);
+        changed = true;
+      }
+      if (changed) window.dispatchEvent(new CustomEvent("cloud:sync"));
+    }).catch(e => console.warn("bulutdan o'qilmadi:", e.message));
+  })();
 })();
